@@ -1,0 +1,7 @@
+acc,batch_size,channel_shift_range,cval,featurewise_center,featurewise_std_normalization,fill_mode,height_shift_range,horizontal_flip,loss,n_epoch,preprocessing_function,rescale,rotation_range,samplewise_center,samplewise_std_normalization,shear_range,vertical_flip,width_shift_range,zca_whitening,zoom_range
+0.5495,128,0.0,0.0,False,False,nearest,0.1,False,1.3087795721054076,1,,,0.0,False,False,0.0,False,0.1,True,0.0
+0.568,128,0.0,0.0,False,False,nearest,0.1,False,1.207404185962677,1,,,0.0,False,False,0.0,False,0.1,True,0.0
+0.6754,128,0.0,0.0,False,False,nearest,0.1,False,0.9328296619415284,2,,,0.0,False,False,0.0,False,0.1,True,0.0
+0.5321,128,0.0,0.0,False,False,nearest,0.1,True,1.3126501585006711,1,,,0.0,False,False,0.0,False,0.1,True,0.0
+0.6418,128,0.0,0.0,False,False,nearest,0.1,True,1.0171959306716918,2,,,0.0,False,False,0.0,False,0.1,True,0.0
+0.8476,128,0.0,0.0,False,False,nearest,0.1,True,0.45655360765457154,50,,,0.0,False,False,0.0,False,0.1,True,0.0
