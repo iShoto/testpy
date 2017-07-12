@@ -3,6 +3,9 @@
 import os
 import shutil
 import cv2
+import numpy as np
+import pandas as pd
+
 
 
 def delete_and_make_directory(dir_path='./image_dir/'):
@@ -13,7 +16,6 @@ def delete_and_make_directory(dir_path='./image_dir/'):
 	# Make the directory if it doesn't exist.
 	if not os.path.exists(dir_path):
 		os.makedirs(dir_path)
-
 
 
 def video_2_frames(video_file='./IMG_2140.MOV', image_dir='./image_dir/', image_file='img_%s.png'):
@@ -43,3 +45,11 @@ def get_target_files(dir_path='./image_dir/', cond='.png'):
 	files = [f for f in os.listdir(dir_path) if f[-4:]=='.png']
 
 	return files
+
+
+def make_df_from_list_and_array():
+	col1 = [0,1,2,3,4] 
+	col2 = np.array([5,6,7,8,9])
+	
+	df = pd.DataFrame({'col_list':col1, 'col_array':col2})
+	print(df)
