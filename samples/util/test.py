@@ -37,3 +37,9 @@ def video_2_frames(video_file='./IMG_2140.MOV', image_dir='./image_dir/', image_
 		i += 1
 
 	cap.release()  # When everything done, release the capture
+
+
+def get_target_files(dir_path='./image_dir/', cond='.png'):
+	files = [f for f in os.listdir(dir_path) if f[-4:]=='.png']
+
+	return files
