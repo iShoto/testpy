@@ -21,7 +21,7 @@ IMAGE_LABEL_FILE ='image_label.csv'                  # Image name and its label
 
 
 class Image_Clustering:
-	def __init__(self, n_clusters=50, video_file='IMG_2140.MOV', image_file_temp='img_%s.png', input_video=False):
+	def __init__(self, n_clusters=50, video_file='IMG_2140.MOV', image_file_temp='img_%s.png', input_video=True):
 		self.n_clusters = n_clusters            # The number of cluster
 		self.video_file = video_file            # Input video file name
 		self.image_file_temp = image_file_temp  # Image file name template
