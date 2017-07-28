@@ -34,9 +34,6 @@ class Image_Clustering:
 		self.label_images()
 		self.classify_images()
 		
-		#self.vgg16_recoginition()
-		#self.vgg16_feature_extraction()
-
 
 	def video_2_frames(self):
 		print('Video to frames...')
@@ -56,12 +53,8 @@ class Image_Clustering:
 			cv2.imwrite(TARGET_IMAGES_DIR+self.image_file_temp % str(i).zfill(6), frame)  # Save a frame
 			i += 1
 			print('Save', TARGET_IMAGES_DIR+self.image_file_temp % str(i).zfill(6))
-			#cv2.imshow('frame', frame)
-			#if cv2.waitKey(1) & 0xFF == ord('q'):
-			#	break
 
 		cap.release()  # When everything done, release the capture
-		#cv2.destroyAllWindows()
 		print('')
 
 
@@ -103,13 +96,7 @@ class Image_Clustering:
 		x = preprocess_input(x)  # RGB 2 BGR and zero-centering by mean pixel based on the position of channels
 
 		feat = model.predict(x)  # Get image features
-		print(feat)
-		print(feat.shape)
 		feat = feat.flatten()  # Convert 3-dimentional matrix to (1, n) array
-		print(feat)
-		print(feat.shape)
-
-		1/0
 
 		return feat
 
@@ -139,27 +126,6 @@ class Image_Clustering:
 				src = TARGET_IMAGES_DIR + ci
 				dst = CLUSTERED_IMAGES_DIR + str(label) + '/' + ci
 				shutil.copyfile(src, dst)
-
-		print('')
-
-
-
-
-
-
-	def vgg16_recoginition(self, img_path):
-		model = VGG16(weights='imagenet')
-		# model.summary()
-
-		img = image.load_img(img_path, target_size=(224, 224))  # resize
-		x = image.img_to_array(img)
-		x = np.expand_dims(x, axis=0)  # add a dimention of samples.
-		x = preprocess_input(x)  # RGB 2 BGR and zero-centering by mean pixel based on the position of channels.
-		
-		preds = model.predict(x)
-		results = decode_predictions(preds, top=5)[0]
-		for result in results:
-			print(result)
 
 		
 if __name__ == "__main__":
