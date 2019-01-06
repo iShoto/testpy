@@ -1,18 +1,20 @@
-# 2019-01-07 PythonでOCR
+# 2019-01-06 PythonでOCR
 
 [Netflixの字幕がダウンロードできる](https://ameblo.jp/macgyverisms/entry-12378152858.html)と知ったので実行してみたが、
 日本語字幕が画像だったため、PythonでOCRにかけて文字列に変換した。結果は微妙。
 
 ## Install
+OSはWindows10。ORCには以下の２つが必要。
+
 1. pyorc-0.5.3
 2. tesseract-ocr-setup-3.05.02-20180621
 
+1はpip。
 2は、[Tesseract at UB Mannheim](https://github.com/UB-Mannheim/tesseract/wiki)から、
-`tesseract-ocr-setup-3.05.02-20180621.exe`をダウンロード。
+`tesseract-ocr-setup-3.05.02-20180621.exe`をダウンロードして実行。
 最初3.02を使っていたが、精度が低かったため、3.05を選択。
 4.00が出てるので、そちらの方がいいかも。
-exe実行時のオプションで、ダウンロードする言語を選択するとき、日本語を必ず選択すること。
-なお、OSはWindows10。
+exe実行時、OCRにかける言語を選択するオプションでは日本語を選択すること。
 
 ## Code
 以下のコードを実行すると、字幕画像を文字列にしてファイルに出力してくれる。
@@ -65,28 +67,24 @@ subs.close()
 
 ## Result
 
-複雑な漢字が苦手らしい。
-また、他の画像でも試したが、精度が画像の大きさとも相関している模様。
+複雑な漢字が苦手らしい。縁取りがあるからな気もする。
+また、他の画像でも試したが、画像の大きさとも精度が相関している模様。
 
 - 画像  
 ![pic](ttpi000003.png)
 
 - 文字列  
-"""
-ステ一 ンヨノ建L ロ時に出た廃某 武物
-"""
+ステ一 ンヨノ建L ロ時に出た廃某 武物  
 
 - 画像  
 ![pic](ttpi000075.png)
 
 - 文字列  
-"""
-これなんか
-かなり当たるようですよ
-"""
+これなんか  
+かなり当たるようですよ  
 
 ## References
 - [Netflixの字幕をダウンロードする方法](https://ameblo.jp/macgyverisms/entry-12378152858.html)
 - [pipを使わずwindows10にtesseractとPyOCRをインストールする方法](https://haitenaipants.hatenablog.com/entry/2018/06/02/193554)
-- [PyOCR】画像から日本語の文字データを抽出する](https://qiita.com/mczkzk/items/393abc70836b9bde2f60)
+- [【PyOCR】画像から日本語の文字データを抽出する](https://qiita.com/mczkzk/items/393abc70836b9bde2f60)
 - [Windows で Tesseract 3.0.5 を使ってみる](https://www.kunihikokaneko.com/dblab/licenseplate/tesseract.html)
