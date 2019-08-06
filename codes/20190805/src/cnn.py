@@ -58,8 +58,22 @@ image_file_path = '../data/goldenretriever-3724972_640.jpg'
 img = Image.open(image_file_path)
 
 # 2. 元画像の表示
-plt.imshow(img)
-plt.show()
+#plt.imshow(img)
+#plt.show()
+
+# ILSVRCのラベル情報をロードし辞意書型変数を生成します。
+ILSVRC_class_index = json.load(open('../data/imagenet_class_index.json', 'r'))
+print(ILSVRC_class_index)
+
+# 出力結果からラベルを予測する後処理クラス
+class ILSVRCPredictor():
+	"""
+	ILSVRCデータに対するモデルの出力からラベルを求める。
+	"""
+
+
+
+
 
 
 
