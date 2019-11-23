@@ -103,3 +103,4 @@ ENV/
 # etc
 codes/*/data/
 codes/20190805/pytorch_advanced/
+*pth
