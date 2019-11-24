@@ -9,10 +9,10 @@ import torch.optim as optim
 import cv2
 import random
 
-
 PATH = '../models/cifar_net.pth'
 
 def main():
+	# cf. https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html
 	trainloader, testloader, classes = load_dataset()
 	train(trainloader)
 	test(testloader, classes)
