@@ -1,6 +1,6 @@
 # 【論文解説】SinGAN: Learning a Generative Model from a Single Natural Image
 
-1枚の画像に対して様々な操作が可能な [SinGAN](https://arxiv.org/abs/1905.01164) の論文を簡単にまとめた。SinGANはSingle GANの略。個人的には、GANではあるが必要な訓練データが1枚というのがリソースが少なくて嬉しいのと、実写画像でも調和的な編集や画像合成ができる、というのが気になって読んでみた。
+1枚の画像に対して様々な操作が可能な [SinGAN](https://arxiv.org/abs/1905.01164) の論文を簡単にまとめた。SinGANはSingle GANの略。個人的には、ICCV 2019でbest paperだったのと、GANだけど必要な訓練データが1枚なのでリソースが少なくて嬉しいのと、実写画像でも調和的な編集や画像合成ができる、というのが気になって読んでみた。
 
 ## 1. メタ情報
 - Title: [SinGAN: Learning a Generative Model from a Single Natural Image](https://arxiv.org/abs/1905.01164)
@@ -90,23 +90,29 @@ FIDは画像間の距離を図ることができるが、複数画像のペア�
 SIFIDは $N$ が 0.09 、 $N-1$ が 0.05 （低い方がよい）となり、定性評価と同じく $N-1$ の方が元画像に近いことが分かる（左から2番目の列）。
 また、SIFIDと定性評価との相関があることも示されている（右端の列）。
 
-### 4.4
+### 4.4 画像操作：Editing, Harmonization
 
+色々な操作ができるが、個人的な興味からEditingとHarmonizationのみに絞って解説する。
+
+#### Editing
 
 ![pic](./images/fig12.png)
 
+編集して縮小した画像を入力する。
+見ての通り、つなぎ目がシームレスになっている。
+粗い画像から徐々に拡大しながら精巧さを向上させる構造を考えると納得できる。
+PhotoshopのContent Aware Moveよりも良い結果と言っている。
+
+#### Harmonization
+
 ![pic](./images/fig13.png)
 
-
-
-
-- super resolution
-- external methodのSRGANには及ばないがスコアは近い
-- internal methodではSOTA
-
+縮小した合成画像を入力する。
+Deep Painterly Harmonization(DPH)よりも、前景のオリジナリティが保持されている。
+スケール数 $n$ は2～4 が適切で、前景の構造を保ちつつ背景のテクスチャーに上手く変換できるらしい。
+（なんとなくDPHもパラメーター調整でいい感じになる気がするが。）
 
 ## 5. 所感
-- SIFID
-- Deep Paintlery Harmonizationでできなかったリアル画像の特徴抽出
-
-
+SinGANは本当に色々でき、応用範囲も広いと思う。
+例えば、HarmonizationができるならStyle Transferもできるとか。
+特にHarmonizationは、実写画像の扱いが難しかったので、もし上手くいったらSinGANの発明者の皆さんに感謝したい気持ちでいっぱいです。
