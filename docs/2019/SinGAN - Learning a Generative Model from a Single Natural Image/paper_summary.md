@@ -1,41 +1,42 @@
 # 【論文解説】SinGAN: Learning a Generative Model from a Single Natural Image
 
-1枚の画像に対して様々な操作が可能な [SinGAN](https://arxiv.org/abs/1905.01164) の論文を簡単にまとめた。SinGANはSingle GANの略。個人的には、ICCV 2019でbest paperだったのと、GANだけど必要な訓練データが1枚なのでリソースが少なくて嬉しいのと、実写画像でも調和的な編集や画像合成ができる、というのが気になって読んでみた。
+1枚の画像に対して様々な操作が可能な [SinGAN](https://arxiv.org/abs/1905.01164) の論文を簡単にまとめた。
+SinGANはSingle GANの略。
+個人的には、ICCV 2019でbest paperだったのと、GANだけど必要な訓練データが1枚なのでリソースが少なくて嬉しいのと、実写画像でも調和的な編集や画像合成ができる、というのが気になって読んでみた。
+メタ情報は次の通り。
 
-## 1. メタ情報
 - Title: [SinGAN: Learning a Generative Model from a Single Natural Image](https://arxiv.org/abs/1905.01164)
-- Authers:  Tamar Rott Shaham, Tali Dekel, Tomer Michaeli
+- Authors:  Tamar Rott Shaham, Tali Dekel, Tomer Michaeli
 - Conference: ICCV 2019
 
-## 2. 概要
-1枚の画像に対して様々な処理を実現する手法。
-処理内容は、Paint to Image、Editing、Harmonization、Super Reslution、Single Image Annimation の5つ（Figure 2）。
-画像を少しスケールアップさせるGANのピラミッドを構成し、粗い画像から複数の段階を経て精巧な画像を生成するように訓練する。
-テスト時に入力する画像とスケールを調整することで、様々な画像の操作を行う。
+## 1. 概要
+1枚の画像に対して様々な操作を実現する手法。
+操作の種類は、Paint to Image、Editing、Harmonization、Super Reslution、Single Image Annimation の5つ。
+画像をスケールアップさせるGANでピラミッドを構成し、粗い画像から段階的に精巧な画像を生成するように訓練する。
+テスト時は入力画像とスケールを調整することで、様々な画像の操作を実現する。
 
 ![pic](./images/fig2.png)
 
 
 ## 2. 先行研究との差異
 従来のGANは特定の操作のためにデザインされているが、本手法は多くの異なる画像操作が可能である。
-SinGANと同様、単一の画像を扱うGANはあったが条件付き（特定画像から別画像への変換）であった。そのため、本手法では条件なし（ノイズから画像への変換）を可能にしている。
+SinGANと同様、単一の画像を扱うGANはあったが条件付き（特定画像から別画像への変換）であった。
+そのため、本手法では条件なし（ノイズから画像への変換）を可能にしている。
 また、従来のGANでは実写画像が扱えなかった点も本手法で克服している。
 
 ## 3. 手法
 
 従来のGANと異なりSinGAN では、画像セットではなく1つの画像からパッチセットを作成して訓練に利用する。
-またGANのピラミッドからなるモデルにより、複数の異なるスケールの画像から複雑な画像構造を獲得する。
-
+またGANのピラミッドにしたモデルにより、複数の異なるスケールの画像から複雑な構造を獲得する。
 
 ![pic](./images/fig4.png)
 
-
 モデル構造の概要は上図の通り。
 スケール $n$ で生成器 $G_n$ は $\tilde{x}_n$ を生成する。
-このときは、識別器 $D_n$ が訓練画像をダウンスケールした画像 $x_n$ と区別できないような $\tilde{x}_n$ を生成するように $G_n$ を訓練する。
-また $x_n$ と $\tilde{x}_n$ で比較するのは、画像全体ではなく両者で重なり会うパッチごとである。
+このとき $G_n$ は、識別器 $D_n$ が訓練画像をスケールダウンした画像 $x_n$ と区別できないような $\tilde{x}_n$ を生成する。
+また $x_n$ と $\tilde{x}_n$ を区別する際に比較するのは、画像全体ではなく両者で重なり会うパッチごとである。
 パッチサイズは画像がスケールアップされるにつれて小さくなる（右端時の黄色矩形）。
-スケール $n$ からスケール $n-1$ になる際、 $\tilde{x}_n$ をアップスケールし、ノイズと共に $G_{n-1}$ に入力して $\tilde{x}_{n-1}$ を生成する。
+スケール $n$ からスケール $n-1$ になる際、 $\tilde{x}_n$ をスケールアップしてノイズと共に $G_{n-1}$ に入力し、 $\tilde{x}_{n-1}$ を生成する。
 ただし $n=N$ の場合のみ、$\tilde{x}_N$ は ノイズ $z_N$ から生成する。
 
 ![pic](./images/fig5.png)
@@ -113,6 +114,6 @@ Deep Painterly Harmonization(DPH)よりも、前景のオリジナリティが�
 （なんとなくDPHもパラメーター調整でいい感じになる気がするが。）
 
 ## 5. 所感
-SinGANは本当に色々でき、応用範囲も広いと思う。
-例えば、HarmonizationができるならStyle Transferもできるとか。
-特にHarmonizationは、実写画像の扱いが難しかったので、もし上手くいったらSinGANの発明者の皆さんに感謝したい気持ちでいっぱいです。
+Harmonizationは、Deep Painterly Harmonizationでは実写画像の扱いが難しかったのと、学習しないからか生成画像が粗かったので、もしホントに実写で上手くいったらSinGANの発明者の皆さんに感謝したい気持ちでいっぱいです。
+あと、SinGANは本当に色々できるので、そのぶん応用範囲も広いと思う。
+まず、HarmonizationができるならStyle Transferもできるし、Editingも一種のStyle Transferみたいな感じがしたで、そっち方面で新たな研究成果が期待できそう。
