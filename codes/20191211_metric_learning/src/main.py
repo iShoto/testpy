@@ -96,15 +96,18 @@ def visualize(feat, labels, epoch):
 	for i in range(10):
 		plt.plot(feat[labels == i, 0], feat[labels == i, 1], '.', c=c[i])
 	plt.legend(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], loc = 'upper right')
-	plt.xlim(xmin=-8,xmax=8)
-	plt.ylim(ymin=-8,ymax=8)
-	plt.text(-7.8,7.3,"epoch=%d" % epoch)
-	# plt.savefig('./images/epoch=%d.jpg' % epoch)
-	plt.draw()
-	plt.pause(0.001)
+	#plt.xlim(xmin=-8, xmax=8)
+	#plt.ylim(ymin=-8, ymax=8)
+	plt.xlim(left=-8, right=8)
+	plt.ylim(bottom=-8, top=8)
+	plt.text(-7.8, 7.3, "epoch=%d" % epoch)
+	plt.savefig('../output/visual/epoch_{}.png'.format(str(epoch).zfill(3)))
+	#plt.draw()
+	#plt.pause(0.001)
 
 
 def train(epoch):
+	epoch += 1
 	print("Training... Epoch = %d" % epoch)
 	ip1_loader = []
 	idx_loader = []
@@ -127,38 +130,24 @@ def train(epoch):
  
 	feat = torch.cat(ip1_loader, 0)
 	labels = torch.cat(idx_loader, 0)
-	visualize(feat.data.cpu().numpy(),labels.data.cpu().numpy(),epoch)
+	visualize(feat.data.cpu().numpy(), labels.data.cpu().numpy(), epoch)
 
 
 use_cuda = torch.cuda.is_available() and True
 device = torch.device("cuda" if use_cuda else "cpu")
 
-# Dataset
-transform = transforms.Compose([
-	transforms.ToTensor(),
-	transforms.Normalize((0.1307,), (0.3081,))
-])
-trainset = datasets.MNIST('../MNIST', train=True, download=True, transform=transform)
-train_loader = DataLoader(trainset, batch_size=128, shuffle=True, num_workers=0)
-
-"""
-def load_dataset(check_data=False):
+def load_dataset():
+	# Dataset
 	transform = transforms.Compose([
 		transforms.ToTensor(),
-		transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
+		transforms.Normalize((0.1307,), (0.3081,))
 	])
+	trainset = datasets.MNIST('D:/workspace/datasets', train=True, download=True, transform=transform)
+	train_loader = DataLoader(trainset, batch_size=128, shuffle=True, num_workers=0)
 
-	trainset = torchvision.datasets.CIFAR10(root='../data', train=True, download=True, transform=transform)
-	trainloader = torch.utils.data.DataLoader(trainset, batch_size=4, shuffle=True, num_workers=2)
-	testset = torchvision.datasets.CIFAR10(root='../data', train=False,	download=True, transform=transform)
-	testloader = torch.utils.data.DataLoader(testset, batch_size=4, shuffle=False, num_workers=2)
-	classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-	
-	if check_data == True:
-		check_train_data(trainloader, classes)
+	return train_loader
 
-	return trainloader, testloader, classes
-"""
+train_loader = load_dataset()
 
 # Model
 model = Net().to(device)
