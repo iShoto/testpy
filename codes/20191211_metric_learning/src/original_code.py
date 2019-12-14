@@ -27,8 +27,8 @@ class Net(nn.Module):
 		self.prelu3_1 = nn.PReLU()
 		self.conv3_2 = nn.Conv2d(128, 128, kernel_size=5, padding=2)
 		self.prelu3_2 = nn.PReLU()
-		self.preluip1 = nn.PReLU()
 		self.ip1 = nn.Linear(128*3*3, 2)
+		self.preluip1 = nn.PReLU()
 		self.ip2 = nn.Linear(2, 10, bias=False)
  
 	def forward(self, x):
@@ -87,6 +87,7 @@ class CenterlossFunc(Function):
 		grad_centers.scatter_add_(0, label.unsqueeze(1).expand(feature.size()).long(), diff)
 		grad_centers = grad_centers/counts.view(-1, 1)
 		return - grad_output * diff / batch_size, None, grad_centers / batch_size, None
+
 
 def visualize(feat, labels, epoch):
 	plt.ion()
@@ -161,8 +162,8 @@ loss_weight = 1
 centerloss = CenterLoss(10, 2).to(device)
  
 # optimzer4nn
-optimizer4nn = optim.SGD(model.parameters(),lr=0.001,momentum=0.9, weight_decay=0.0005)
-sheduler = lr_scheduler.StepLR(optimizer4nn,20,gamma=0.8)
+optimizer4nn = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0005)
+sheduler = lr_scheduler.StepLR(optimizer4nn, 20, gamma=0.8)
  
 # optimzer4center
 optimzer4center = optim.SGD(centerloss.parameters(), lr =0.5)
