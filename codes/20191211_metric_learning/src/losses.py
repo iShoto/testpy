@@ -16,8 +16,8 @@ class CenterLoss(nn.Module):
 		feat = feat.view(batch_size, -1)
 		# To check the dim of centers and features
 		if feat.size(1) != self.feat_dim:
-			raise ValueError("Center's dim: {0} should be equal to input feature's \
-							dim: {1}".format(self.feat_dim,feat.size(1)))
+			value_error_msg_temp = "Center's dim: {0} should be equal to input feature's dim: {1}"
+			raise ValueError(value_error_msg_temp.format(self.feat_dim, feat.size(1)))
 		batch_size_tensor = feat.new_empty(1).fill_(batch_size if self.size_average else 1)
 		loss = self.centerlossfunc(feat, label, self.centers, batch_size_tensor)
 		return loss

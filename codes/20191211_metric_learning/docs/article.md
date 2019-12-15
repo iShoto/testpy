@@ -61,6 +61,15 @@ NLL Lossにより、高い確信度であれば低いロス、低い確信度で
 - [Understanding softmax and the negative log-likelihood - Lj Miranda](https://ljvmiranda921.github.io/notebook/2017/08/13/softmax-and-the-negative-log-likelihood/)
 
 
+#### @staticmethod
+静的関数
+
+
+- [Difference between 'ctx' and 'self' in python? - stack overflow](https://stackoverflow.com/questions/49516188/difference-between-ctx-and-self-in-python)
+
+
+
+
 ### 3. Training
 
 #### optimizer & loss
@@ -84,3 +93,17 @@ optimizer.step()  # パラメータの更新
 `plt.savefig()`で描画結果を保存するなら不要。
 
 - [plt.ion() すると描画されないことがある - Qiita](https://qiita.com/halm/items/becdc1e1a456562f21c8)
+
+
+#### torchvision.utils.make_grid()
+
+train_loader のバッチを簡単に可視化できる。
+
+```py
+images, labels = iter(train_loader).next()  # train_loader のミニバッチの image を取得
+img = torchvision.utils.make_grid(images, nrow=12, padding=1)  # nrom*nrom のタイル形状の画像を作る
+plt.imshow(np.transpose(img.numpy(), (1, 2, 0)))  # 画像を matplotlib 用に変換
+plt.show()
+```
+
+- [PyTorch まずMLPを使ってみる - cedro-blog](http://cedro3.com/ai/pytorch-mlp/)

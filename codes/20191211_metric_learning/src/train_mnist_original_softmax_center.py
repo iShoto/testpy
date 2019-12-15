@@ -6,10 +6,13 @@ from torchvision import datasets, transforms
 from  torch.utils.data import DataLoader
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.autograd.function import Function
+import torchvision
 
 import matplotlib.pyplot as plt
 import argparse
 from tqdm import trange
+import numpy as np
+from sklearn.metrics import classification_report
 
 from losses import CenterLoss
 from mnistnet import Net
@@ -25,18 +28,33 @@ def load_dataset(dataset_dir):
 	])
 	trainset = datasets.MNIST(dataset_dir, train=True, download=True, transform=transform)
 	train_loader = DataLoader(trainset, batch_size=128, shuffle=True, num_workers=0)
+	testset = datasets.MNIST(dataset_dir, train=False, download=True, transform=transform)
+	test_loader = DataLoader(testset, batch_size=128, shuffle=False, num_workers=0)
 
-	return train_loader
+	return train_loader, test_loader
+
+
+def show_data(train_loader):
+	images, labels = iter(train_loader).next()  # train_loader のミニバッチの image を取得
+	img = torchvision.utils.make_grid(images, nrow=12, padding=1)  # nrom*nrom のタイル形状の画像を作る
+	plt.ion()
+	plt.imshow(np.transpose(img.numpy(), (1, 2, 0)))  # 画像を matplotlib 用に変換
+	plt.draw()
+	plt.pause(3)  # Display an image for three seconds.
+	plt.close()
 
 
 def train(train_loader, device, model, nllloss, loss_weight, centerloss, dnn_optimizer, center_optimizer):
+	running_loss = 0.0
+	pred_list = []
+	label_list = []
 	ip1_loader = []
 	idx_loader = []
-	for i,(data, labels) in enumerate(train_loader):
+	for i,(imgs, labels) in enumerate(train_loader):
 		# Set batch data.
-		data, labels = data.to(device), labels.to(device)
+		imgs, labels = imgs.to(device), labels.to(device)
 		# Predict labels.
-		ip1, pred = model(data)
+		ip1, pred = model(imgs)
 		# Calculate loss.
 		loss = nllloss(pred, labels) + loss_weight * centerloss(labels, ip1)
 		# Initilize gradient.
@@ -47,10 +65,19 @@ def train(train_loader, device, model, nllloss, loss_weight, centerloss, dnn_opt
 		# Upate parameters.
 		dnn_optimizer.step()
 		center_optimizer.step()
-
+		# For calculation.
+		running_loss += loss.item()
+		pred_list += [int(p.argmax()) for p in pred]
+		label_list += [int(l) for l in labels]
+		# For visualization.
 		ip1_loader.append(ip1)
 		idx_loader.append((labels))
- 
+	
+	result = classification_report(pred_list, label_list, output_dict=True)
+	train_acc = round(result['weighted avg']['f1-score'], 6)
+	train_loss = round(running_loss / len(train_loader.dataset), 6)
+	print('train acc: {}, train loss: {}'.format(train_acc, train_loss))
+
 	feat = torch.cat(ip1_loader, 0)
 	labels = torch.cat(idx_loader, 0)
 
@@ -78,7 +105,8 @@ def main():
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 	# Dataset
-	train_loader = load_dataset(args.dataset_dir)
+	train_loader, test_loader = load_dataset(args.dataset_dir)
+	show_data(train_loader)
 
 	# Model
 	model = Net().to(device)
@@ -95,21 +123,26 @@ def main():
 	center_optimizer = optim.SGD(centerloss.parameters(), lr =0.5)
 	
 	#for epoch in range(100):  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	for epoch in trange(2, desc='Training The Model'):
+	#for epoch in trange(5, desc='Training a model'):
+	for epoch in range(5):
+		print('Epoch: {:>3}, '.format(str(epoch)), end='')
+		# Update sheduler.
 		sheduler.step()
+		# train a model.
 		feat, labels = train(train_loader, device, model, nllloss, loss_weight, centerloss, dnn_optimizer, center_optimizer)
+		# Visualize features of each class.
 		vis_img_path = args.vis_img_path_temp.format(str(epoch+1).zfill(3))
 		visualize(feat.data.cpu().numpy(), labels.data.cpu().numpy(), epoch, vis_img_path)
-
-		model_name_path = args.model_name_path_temp.format(str(epoch).zfill(3))
-		torch.save(model.state_dict(), model_name_path)
+		# Save a trained model.
+		model_path = args.model_path_temp.format(str(epoch).zfill(3))
+		torch.save(model.state_dict(), model_path)
 
 
 def parse_args():
 	arg_parser = argparse.ArgumentParser(description="parser for focus one")
 
 	arg_parser.add_argument("--dataset_dir", type=str, default='D:/workspace/datasets')
-	arg_parser.add_argument("--model_name_path_temp", type=str, default='../output/models/mnist_original_softmax_center_epoch_{}.pth')
+	arg_parser.add_argument("--model_path_temp", type=str, default='../output/models/mnist_original_softmax_center_epoch_{}.pth')
 	arg_parser.add_argument("--vis_img_path_temp", type=str, default='../output/visual/epoch_{}.png')
 	
 	args = arg_parser.parse_args()
