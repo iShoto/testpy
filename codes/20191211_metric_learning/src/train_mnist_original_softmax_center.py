@@ -16,32 +16,9 @@ from sklearn.metrics import classification_report
 
 from losses import CenterLoss
 from mnistnet import Net
+import mnist_loader
 
 # cf. https://cpp-learning.com/center-loss/
-
-
-def load_dataset(dataset_dir):
-	# Dataset
-	transform = transforms.Compose([
-		transforms.ToTensor(),
-		transforms.Normalize((0.1307,), (0.3081,))
-	])
-	trainset = datasets.MNIST(dataset_dir, train=True, download=True, transform=transform)
-	train_loader = DataLoader(trainset, batch_size=128, shuffle=True, num_workers=0)
-	testset = datasets.MNIST(dataset_dir, train=False, download=True, transform=transform)
-	test_loader = DataLoader(testset, batch_size=128, shuffle=False, num_workers=0)
-
-	return train_loader, test_loader
-
-
-def show_data(train_loader):
-	images, labels = iter(train_loader).next()  # train_loader のミニバッチの image を取得
-	img = torchvision.utils.make_grid(images, nrow=12, padding=1)  # nrom*nrom のタイル形状の画像を作る
-	plt.ion()
-	plt.imshow(np.transpose(img.numpy(), (1, 2, 0)))  # 画像を matplotlib 用に変換
-	plt.draw()
-	plt.pause(3)  # Display an image for three seconds.
-	plt.close()
 
 
 def train(train_loader, device, model, nllloss, loss_weight, centerloss, dnn_optimizer, center_optimizer):
@@ -85,7 +62,6 @@ def train(train_loader, device, model, nllloss, loss_weight, centerloss, dnn_opt
 
 
 def visualize(feat, labels, epoch, vis_img_path):
-	#plt.ion()
 	colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff',
 			  '#ff00ff', '#990000', '#999900', '#009900', '#009999']
 	plt.clf()
@@ -105,8 +81,7 @@ def main():
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 	# Dataset
-	train_loader, test_loader = load_dataset(args.dataset_dir)
-	show_data(train_loader)
+	train_loader, test_loader, classes = mnist_loader.load_dataset(args.dataset_dir, img_show=True)
 
 	# Model
 	model = Net().to(device)
