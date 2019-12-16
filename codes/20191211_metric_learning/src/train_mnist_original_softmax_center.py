@@ -148,7 +148,7 @@ def parse_args():
 	arg_parser = argparse.ArgumentParser(description="parser for focus one")
 
 	arg_parser.add_argument("--dataset_dir", type=str, default='D:/workspace/datasets')
-	arg_parser.add_argument("--model_path_temp", type=str, default='../output/models/mnist_original_softmax_center_epoch_{}.pth')
+	arg_parser.add_argument("--model_path_temp", type=str, default='../output/models/checkpoints/mnist_original_softmax_center_epoch_{}.pth')
 	arg_parser.add_argument("--vis_img_path_temp", type=str, default='../output/visual/epoch_{}.png')
 	
 	args = arg_parser.parse_args()

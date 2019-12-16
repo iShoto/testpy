@@ -103,7 +103,7 @@ ENV/
 # etc
 codes/*/data/
 codes/20190805/pytorch_advanced/
-codes/20191211_metric_learning/output/
+codes/20191211_metric_learning/outputs/
 *pth
 
 
