@@ -95,6 +95,12 @@ optimizer.step()  # パラメータの更新
 - [plt.ion() すると描画されないことがある - Qiita](https://qiita.com/halm/items/becdc1e1a456562f21c8)
 
 
+#### plt.clf()
+Clear the current figure.
+
+- [matplotlib.pyplot.clf - matplotlib.org](https://matplotlib.org/devdocs/api/_as_gen/matplotlib.pyplot.clf.html)
+
+
 #### torchvision.utils.make_grid()
 
 train_loader のバッチを簡単に可視化できる。

@@ -21,12 +21,14 @@ import mnist_loader
 # cf. https://cpp-learning.com/center-loss/
 
 
-def train(train_loader, device, model, nllloss, loss_weight, centerloss, dnn_optimizer, center_optimizer):
+def train(device, train_loader, model, nllloss, loss_weight, centerloss, dnn_optimizer, center_optimizer):
 	running_loss = 0.0
 	pred_list = []
 	label_list = []
 	ip1_loader = []
 	idx_loader = []
+	
+	model.train()
 	for i,(imgs, labels) in enumerate(train_loader):
 		# Set batch data.
 		imgs, labels = imgs.to(device), labels.to(device)
@@ -53,18 +55,44 @@ def train(train_loader, device, model, nllloss, loss_weight, centerloss, dnn_opt
 	result = classification_report(pred_list, label_list, output_dict=True)
 	train_acc = round(result['weighted avg']['f1-score'], 6)
 	train_loss = round(running_loss / len(train_loader.dataset), 6)
-	print('train acc: {}, train loss: {}'.format(train_acc, train_loss))
-
+	
 	feat = torch.cat(ip1_loader, 0)
 	labels = torch.cat(idx_loader, 0)
+	
+	return train_acc, train_loss, feat, labels
 
-	return feat, labels
+
+def test(device, test_loader, model, nllloss, loss_weight, centerloss):
+	model = model.eval()
+		
+	# Prediciton
+	running_loss = 0.0
+	pred_list = []
+	label_list = []
+	with torch.no_grad():
+		for i,(imgs, labels) in enumerate(test_loader):
+			# Set batch data.
+			imgs, labels = imgs.to(device), labels.to(device)
+			# Predict labels.
+			ip1, pred = model(imgs)
+			# Calculate loss.
+			loss = nllloss(pred, labels) + loss_weight * centerloss(labels, ip1)
+			# Append predictions and labels.
+			running_loss += loss.item()
+			pred_list += [int(p.argmax()) for p in pred]
+			label_list += [int(l) for l in labels]
+
+	# Calculate accuracy.
+	result = classification_report(pred_list, label_list, output_dict=True)
+	test_acc = round(result['weighted avg']['f1-score'], 6)
+	test_loss = round(running_loss / len(test_loader.dataset), 6)
+
+	return test_acc, test_loss
 
 
 def visualize(feat, labels, epoch, vis_img_path):
 	colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff',
 			  '#ff00ff', '#990000', '#999900', '#009900', '#009999']
-	plt.clf()
 	for i in range(10):
 		plt.plot(feat[labels==i, 0], feat[labels==i, 1], '.', color=colors[i])
 	plt.legend(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], loc='best')
@@ -72,7 +100,8 @@ def visualize(feat, labels, epoch, vis_img_path):
 	plt.ylim(bottom=-8, top=8)
 	plt.text(-7.8, 7.3, "epoch=%d" % epoch)
 	plt.savefig(vis_img_path)
-
+	plt.clf()
+	
 
 def main():
 	args = parse_args()
@@ -104,7 +133,9 @@ def main():
 		# Update sheduler.
 		sheduler.step()
 		# train a model.
-		feat, labels = train(train_loader, device, model, nllloss, loss_weight, centerloss, dnn_optimizer, center_optimizer)
+		train_acc, train_loss, feat, labels = train(device, train_loader, model, nllloss, loss_weight, centerloss, dnn_optimizer, center_optimizer)
+		test_acc, test_loss = test(device, test_loader, model, nllloss, loss_weight, centerloss)
+		print('train acc: {:<8}, train loss: {:<8}, test acc: {:<8}, test loss: {:<8}'.format(train_acc, train_loss, test_acc, test_loss))
 		# Visualize features of each class.
 		vis_img_path = args.vis_img_path_temp.format(str(epoch+1).zfill(3))
 		visualize(feat.data.cpu().numpy(), labels.data.cpu().numpy(), epoch, vis_img_path)
