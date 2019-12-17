@@ -93,6 +93,7 @@ def test(device, test_loader, model, nllloss, loss_weight, centerloss):
 def visualize(feat, labels, epoch, vis_img_path):
 	colors = ['#ff0000', '#ffff00', '#00ff00', '#00ffff', '#0000ff',
 			  '#ff00ff', '#990000', '#999900', '#009900', '#009999']
+	plt.figure()
 	for i in range(10):
 		plt.plot(feat[labels==i, 0], feat[labels==i, 1], '.', color=colors[i])
 	plt.legend(['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'], loc='best')
@@ -126,19 +127,22 @@ def main():
 	sheduler = lr_scheduler.StepLR(dnn_optimizer, 20, gamma=0.8)
 	center_optimizer = optim.SGD(centerloss.parameters(), lr =0.5)
 	
-	#for epoch in range(100):  # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	#for epoch in trange(5, desc='Training a model'):
-	for epoch in range(5):
-		print('Epoch: {:>3}, '.format(str(epoch)), end='')
-		# Update sheduler.
+	print('Start training...')
+	for epoch in range(100):
+		# Update parameters.
+		epoch += 1
 		sheduler.step()
-		# train a model.
+
+		# Train and test a model.
 		train_acc, train_loss, feat, labels = train(device, train_loader, model, nllloss, loss_weight, centerloss, dnn_optimizer, center_optimizer)
 		test_acc, test_loss = test(device, test_loader, model, nllloss, loss_weight, centerloss)
-		print('train acc: {:<8}, train loss: {:<8}, test acc: {:<8}, test loss: {:<8}'.format(train_acc, train_loss, test_acc, test_loss))
+		stdout_temp = 'Epoch: {:>3}, train acc: {:<8}, train loss: {:<8}, test acc: {:<8}, test loss: {:<8}'
+		print(stdout_temp.format(epoch, train_acc, train_loss, test_acc, test_loss))
+		
 		# Visualize features of each class.
-		vis_img_path = args.vis_img_path_temp.format(str(epoch+1).zfill(3))
+		vis_img_path = args.vis_img_path_temp.format(str(epoch).zfill(3))
 		visualize(feat.data.cpu().numpy(), labels.data.cpu().numpy(), epoch, vis_img_path)
+
 		# Save a trained model.
 		model_path = args.model_path_temp.format(str(epoch).zfill(3))
 		torch.save(model.state_dict(), model_path)
