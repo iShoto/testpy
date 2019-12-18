@@ -39,7 +39,7 @@ def test(device, test_loader, model, nllloss, loss_weight, centerloss):
 	return test_acc, test_loss
 
 
-def main():
+def calc_acc_n_loss():
 	args = parse_args()
 
 	# Device
@@ -64,6 +64,38 @@ def main():
 	test_acc, test_loss = test(device, test_loader, model, nllloss, loss_weight, centerloss)
 	stdout_temp = 'test acc: {:<8}, test loss: {:<8}'
 	print(stdout_temp.format(test_acc, test_loss))
+
+
+def search_query_in_grally():
+	args = parse_args()
+
+	# Device
+	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+	# Dataset
+	train_loader, test_loader, classes = mnist_loader.load_dataset(args.dataset_dir, img_show=True)
+
+	# Model
+	model = Net().to(device)
+	model.load_state_dict(torch.load(args.model_path))
+	model = model.eval()
+	print(model)
+
+	# Loss
+	nllloss = nn.NLLLoss().to(device)  # CrossEntropyLoss = log_softmax + NLLLoss
+	loss_weight = 1
+	centerloss = CenterLoss(10, 2).to(device)
+	
+	# Test a model.
+	print('Testing a trained model....')
+	test_acc, test_loss = test(device, test_loader, model, nllloss, loss_weight, centerloss)
+	stdout_temp = 'test acc: {:<8}, test loss: {:<8}'
+	print(stdout_temp.format(test_acc, test_loss))
+
+
+def main():
+	#calc_acc_n_loss()
+	search_query_in_grally()
 
 
 def parse_args():
