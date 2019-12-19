@@ -46,7 +46,7 @@ def calc_acc_n_loss():
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 	# Dataset
-	train_loader, test_loader, classes = mnist_loader.load_dataset(args.dataset_dir, img_show=True)
+	train_loader, test_loader, classes = mnist_loader.load_dataset(args.dataset_dir, img_show=False)
 
 	# Model
 	model = Net().to(device)
@@ -73,7 +73,7 @@ def search_query_in_grally():
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 	# Dataset
-	train_loader, test_loader, classes = mnist_loader.load_dataset(args.dataset_dir, img_show=True)
+	train_loader, test_loader, classes = mnist_loader.load_dataset(args.dataset_dir, test_batch_size=4)
 
 	# Model
 	model = Net().to(device)
@@ -81,16 +81,15 @@ def search_query_in_grally():
 	model = model.eval()
 	print(model)
 
-	# Loss
-	nllloss = nn.NLLLoss().to(device)  # CrossEntropyLoss = log_softmax + NLLLoss
-	loss_weight = 1
-	centerloss = CenterLoss(10, 2).to(device)
-	
-	# Test a model.
-	print('Testing a trained model....')
-	test_acc, test_loss = test(device, test_loader, model, nllloss, loss_weight, centerloss)
-	stdout_temp = 'test acc: {:<8}, test loss: {:<8}'
-	print(stdout_temp.format(test_acc, test_loss))
+	imgs, labels = iter(test_loader).next() 
+	# Set batch data.
+	imgs, labels = imgs.to(device), labels.to(device)
+	ip1, pred = model(imgs)
+	pred_list = [int(p.argmax()) for p in pred]
+	label_list = [int(l) for l in labels]
+	print(pred_list)
+	print(label_list)
+
 
 
 def main():
