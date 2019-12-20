@@ -15,10 +15,54 @@ import numpy as np
 from sklearn.metrics import classification_report
 
 from losses import CenterLoss
-from mnistnet import Net
+from mnist_net import Net
 import mnist_loader
 
 # cf. https://cpp-learning.com/center-loss/
+
+
+def main():
+	args = parse_args()
+
+	# Device
+	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+	# Dataset
+	train_loader, test_loader, classes = mnist_loader.load_dataset(args.dataset_dir, img_show=True)
+
+	# Model
+	model = Net().to(device)
+	print(model)
+
+	# Loss
+	nllloss = nn.NLLLoss().to(device)  # CrossEntropyLoss = log_softmax + NLLLoss
+	loss_weight = 1
+	centerloss = CenterLoss(10, 2).to(device)
+	
+	# Optimizer
+	dnn_optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0005)
+	sheduler = lr_scheduler.StepLR(dnn_optimizer, 20, gamma=0.8)
+	center_optimizer = optim.SGD(centerloss.parameters(), lr =0.5)
+	
+	print('Start training...')
+	for epoch in range(100):
+		# Update parameters.
+		epoch += 1
+		sheduler.step()
+
+		# Train and test a model.
+		train_acc, train_loss, feat, labels = train(device, train_loader, model, nllloss, loss_weight, centerloss, dnn_optimizer, center_optimizer)
+		test_acc, test_loss = test(device, test_loader, model, nllloss, loss_weight, centerloss)
+		stdout_temp = 'Epoch: {:>3}, train acc: {:<8}, train loss: {:<8}, test acc: {:<8}, test loss: {:<8}'
+		print(stdout_temp.format(epoch, train_acc, train_loss, test_acc, test_loss))
+		
+		# Visualize features of each class.
+		vis_img_path = args.vis_img_path_temp.format(str(epoch).zfill(3))
+		visualize(feat.data.cpu().numpy(), labels.data.cpu().numpy(), epoch, vis_img_path)
+
+		# Save a trained model.
+		model_path = args.model_path_temp.format(str(epoch).zfill(3))
+		torch.save(model.state_dict(), model_path)
 
 
 def train(device, train_loader, model, nllloss, loss_weight, centerloss, dnn_optimizer, center_optimizer):
@@ -103,50 +147,6 @@ def visualize(feat, labels, epoch, vis_img_path):
 	plt.savefig(vis_img_path)
 	plt.clf()
 	
-
-def main():
-	args = parse_args()
-
-	# Device
-	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
-	# Dataset
-	train_loader, test_loader, classes = mnist_loader.load_dataset(args.dataset_dir, img_show=True)
-
-	# Model
-	model = Net().to(device)
-	print(model)
-
-	# Loss
-	nllloss = nn.NLLLoss().to(device)  # CrossEntropyLoss = log_softmax + NLLLoss
-	loss_weight = 1
-	centerloss = CenterLoss(10, 2).to(device)
-	
-	# Optimizer
-	dnn_optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0005)
-	sheduler = lr_scheduler.StepLR(dnn_optimizer, 20, gamma=0.8)
-	center_optimizer = optim.SGD(centerloss.parameters(), lr =0.5)
-	
-	print('Start training...')
-	for epoch in range(100):
-		# Update parameters.
-		epoch += 1
-		sheduler.step()
-
-		# Train and test a model.
-		train_acc, train_loss, feat, labels = train(device, train_loader, model, nllloss, loss_weight, centerloss, dnn_optimizer, center_optimizer)
-		test_acc, test_loss = test(device, test_loader, model, nllloss, loss_weight, centerloss)
-		stdout_temp = 'Epoch: {:>3}, train acc: {:<8}, train loss: {:<8}, test acc: {:<8}, test loss: {:<8}'
-		print(stdout_temp.format(epoch, train_acc, train_loss, test_acc, test_loss))
-		
-		# Visualize features of each class.
-		vis_img_path = args.vis_img_path_temp.format(str(epoch).zfill(3))
-		visualize(feat.data.cpu().numpy(), labels.data.cpu().numpy(), epoch, vis_img_path)
-
-		# Save a trained model.
-		model_path = args.model_path_temp.format(str(epoch).zfill(3))
-		torch.save(model.state_dict(), model_path)
-
 
 def parse_args():
 	arg_parser = argparse.ArgumentParser(description="parser for focus one")
