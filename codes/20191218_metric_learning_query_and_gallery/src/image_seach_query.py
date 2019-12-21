@@ -2,10 +2,14 @@ import torch
 import torch.nn as nn
 from torchvision import datasets, transforms
 
+import os
 import argparse
 from sklearn.metrics import classification_report
 import matplotlib.pyplot as plt
 import cv2
+import random
+import scipy.misc
+import shutil
 
 from losses import CenterLoss
 from mnist_net import Net
@@ -30,6 +34,31 @@ def load_dataset(dataset_dir, train_batch_size=128, test_batch_size=128, img_sho
 """
 
 
+class MNISTDataset(Dataset):
+	def __init__(self, csv_file_path, root_dir, transform=None):
+		#pandasでcsvデータの読み出し
+		self.image_dataframe = pd.read_csv(csv_file_path)
+		self.root_dir = root_dir
+		#画像データへの処理
+		self.transform = transform
+
+	def __len__(self):
+		return len(self.image_dataframe)
+
+	def __getitem__(self, idx):
+		#dataframeから画像へのパスとラベルを読み出す
+		label = self.image_dataframe.iat[idx, LABEL_IDX]
+		img_name = os.path.join(self.root_dir, 'classification-of-handwritten-letters',
+				'letters2', self.image_dataframe.iat[idx, IMG_IDX])
+		#画像の読み込み
+		image = io.imread(img_name)
+		#画像へ処理を加える
+		if self.transform:
+			image = self.transform(image)
+
+		return image, label
+
+
 def main():
 	"""
 	set query and gallery.
@@ -37,22 +66,11 @@ def main():
 	get query feature.
 	"""
 	args = parse_args()
+	#make_query_and_gallery(args.dataset_dir, args.query_dir, args.gallery_dir)
 
-	transform = transforms.Compose([
-		transforms.ToTensor(),
-		transforms.Normalize((0.1307,), (0.3081,))
-	])
-	testset = datasets.MNIST(args.dataset_dir, train=False, download=True, transform=transform)
-	x, _ = testset[7777]
-	print(x.numpy().shape)
-	print(_)
-	import scipy.misc
-	scipy.misc.imsave('outfile.png', x.numpy()[0])
-	1/0
-	cv2.imshow(x.numpy())
-	#plt.imshow(x.numpy()[0], cmap='gray')
-	#plt.show()
-
+	mnist_dataset = datasets.ImageFolder(root='../inputs/')#, transform=data_transform)
+	print(mnist_dataset)
+	
 	1/0
 
 
@@ -79,6 +97,32 @@ def main():
 			running_loss += loss.item()
 			pred_list += [int(p.argmax()) for p in pred]
 			label_list += [int(l) for l in labels]
+
+
+
+def make_query_and_gallery(dataset_dir, query_dir, gallery_dir):
+	transform = transforms.Compose([
+		transforms.ToTensor(),
+		transforms.Normalize((0.1307,), (0.3081,))
+	])
+	testset = datasets.MNIST(dataset_dir, train=False, download=True, transform=transform)
+	q_idx = random.choice(range(len(testset)))
+	g_idxs= random.sample(range(len(testset)), 100)
+	q_img, q_label = testset[q_idx]
+
+	# Save query image.
+	if os.path.exists(query_dir) == True:
+		shutil.rmtree(query_dir)
+	os.makedirs(query_dir)
+	scipy.misc.imsave(query_dir+'{}_{}.png'.format(q_label, q_idx), q_img.numpy()[0])
+	
+	# Save gallery images.
+	if os.path.exists(gallery_dir) == True:
+		shutil.rmtree(gallery_dir)
+	os.makedirs(gallery_dir)
+	for g_idx in g_idxs:
+		g_img, g_label = testset[g_idx]
+		scipy.misc.imsave(gallery_dir+'{}_{}.png'.format(g_label, g_idx), g_img.numpy()[0])
 
 
 def test(device, test_loader, model, nllloss, loss_weight, centerloss):
@@ -112,6 +156,9 @@ def parse_args():
 	arg_parser = argparse.ArgumentParser(description="parser for focus one")
 
 	arg_parser.add_argument("--dataset_dir", type=str, default='D:/workspace/datasets')
+	arg_parser.add_argument("--query_dir", type=str, default='../inputs/query/')
+	arg_parser.add_argument("--gallery_dir", type=str, default='../inputs/gallery/')
+
 	arg_parser.add_argument("--model_path", type=str, default='../outputs/models/mnist_original_softmax_center_epoch_099.pth')
 	
 	args = arg_parser.parse_args()
