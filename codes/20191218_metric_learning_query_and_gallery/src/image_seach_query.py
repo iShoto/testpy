@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
+from torch.utils.data import Dataset
 from torchvision import datasets, transforms
+from skimage import io
 
 import os
 import argparse
@@ -10,6 +12,7 @@ import cv2
 import random
 import scipy.misc
 import shutil
+import pandas as pd
 
 from losses import CenterLoss
 from mnist_net import Net
@@ -35,26 +38,21 @@ def load_dataset(dataset_dir, train_batch_size=128, test_batch_size=128, img_sho
 
 
 class MNISTDataset(Dataset):
-	def __init__(self, csv_file_path, root_dir, transform=None):
+	def __init__(self, anno_path, transform=None):
 		#pandasでcsvデータの読み出し
-		self.image_dataframe = pd.read_csv(csv_file_path)
-		self.root_dir = root_dir
-		#画像データへの処理
+		self.df = pd.read_csv(anno_path)
 		self.transform = transform
 
+
 	def __len__(self):
-		return len(self.image_dataframe)
+		return len(self.df)
+
 
 	def __getitem__(self, idx):
-		#dataframeから画像へのパスとラベルを読み出す
-		label = self.image_dataframe.iat[idx, LABEL_IDX]
-		img_name = os.path.join(self.root_dir, 'classification-of-handwritten-letters',
-				'letters2', self.image_dataframe.iat[idx, IMG_IDX])
-		#画像の読み込み
-		image = io.imread(img_name)
-		#画像へ処理を加える
+		image = io.imread(self.df.loc[idx, 'img_path'])
 		if self.transform:
 			image = self.transform(image)
+		label = self.df.loc[idx, 'label']
 
 		return image, label
 
@@ -66,7 +64,15 @@ def main():
 	get query feature.
 	"""
 	args = parse_args()
+
 	#make_query_and_gallery(args.dataset_dir, args.query_dir, args.gallery_dir)
+	#make_anno_file(args.query_dir, args.gallery_dir, args.anno_path)
+
+	mnist_dataset = MNISTDataset(args.anno_path)
+	print(len(mnist_dataset))
+	print(mnist_dataset[0])
+
+	1/0
 
 	mnist_dataset = datasets.ImageFolder(root='../inputs/')#, transform=data_transform)
 	print(mnist_dataset)
@@ -125,6 +131,30 @@ def make_query_and_gallery(dataset_dir, query_dir, gallery_dir):
 		scipy.misc.imsave(gallery_dir+'{}_{}.png'.format(g_label, g_idx), g_img.numpy()[0])
 
 
+def make_anno_file(query_dir, gallery_dir, anno_path):
+	annos = []
+	annos += __set_annos(query_dir, 'query')
+	annos += __set_annos(gallery_dir, 'gallery')
+	df = pd.DataFrame(annos)
+	df.to_csv(anno_path, index=False)
+	#print(df)
+
+
+def __set_annos(img_dir, img_type):
+	annos = []
+	for d in os.listdir(img_dir):
+		dic = {}
+		dic['img_type'] = img_type
+		dic['img_name'] = d
+		dic['img_path'] = img_dir
+		dic['label'] = d.split('_')[0]
+		dic['id'] = d.split('.')[0].split('_')[1]
+		annos.append(dic)
+
+	return annos
+	
+
+
 def test(device, test_loader, model, nllloss, loss_weight, centerloss):
 	model = model.eval()
 		
@@ -156,8 +186,11 @@ def parse_args():
 	arg_parser = argparse.ArgumentParser(description="parser for focus one")
 
 	arg_parser.add_argument("--dataset_dir", type=str, default='D:/workspace/datasets')
+	arg_parser.add_argument("--input_dir", type=str, default='../inputs/')
 	arg_parser.add_argument("--query_dir", type=str, default='../inputs/query/')
 	arg_parser.add_argument("--gallery_dir", type=str, default='../inputs/gallery/')
+	arg_parser.add_argument("--anno_path", type=str, default='../inputs/anno.csv')
+
 
 	arg_parser.add_argument("--model_path", type=str, default='../outputs/models/mnist_original_softmax_center_epoch_099.pth')
 	
