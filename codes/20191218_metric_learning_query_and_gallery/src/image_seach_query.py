@@ -1,6 +1,6 @@
 import torch
 import torch.nn as nn
-from torch.utils.data import Dataset
+from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
 from skimage import io
 
@@ -37,10 +37,11 @@ def load_dataset(dataset_dir, train_batch_size=128, test_batch_size=128, img_sho
 """
 
 
-class MNISTDataset(Dataset):
-	def __init__(self, anno_path, transform=None):
+class ReIDDataset(Dataset):
+	def __init__(self, anno_path, data_type, transform=None):
 		#pandasでcsvデータの読み出し
-		self.df = pd.read_csv(anno_path)
+		df_all = pd.read_csv(anno_path)
+		self.df = df_all[df_all['data_type']==data_type].reset_index(drop=True)
 		self.transform = transform
 
 
@@ -49,11 +50,13 @@ class MNISTDataset(Dataset):
 
 
 	def __getitem__(self, idx):
-		image = io.imread(self.df.loc[idx, 'img_path'])
+		img_path = self.df.loc[idx, 'img_path']
+		assert os.path.exists(img_path)
+		image = io.imread(img_path)
+		label = self.df.loc[idx, 'label']
 		if self.transform:
 			image = self.transform(image)
-		label = self.df.loc[idx, 'label']
-
+		
 		return image, label
 
 
@@ -68,14 +71,26 @@ def main():
 	#make_query_and_gallery(args.dataset_dir, args.query_dir, args.gallery_dir)
 	#make_anno_file(args.query_dir, args.gallery_dir, args.anno_path)
 
-	mnist_dataset = MNISTDataset(args.anno_path)
-	print(len(mnist_dataset))
-	print(mnist_dataset[0])
+	query_dataset = ReIDDataset(args.anno_path, 'query')
+	query_loader = DataLoader(query_dataset, batch_size=len(query_dataset), shuffle=False)
+	print(len(query_loader))
+	for i,(imgs, labels) in enumerate(query_loader):
+		# Set batch data.
+		print(imgs.shape)
+		print(labels)
+	print('')
 
+	
+	gallery_dataset = ReIDDataset(args.anno_path, 'gallery')
+	gallery_loader = DataLoader(gallery_dataset, batch_size=len(gallery_dataset), shuffle=True)
+	print(len(gallery_dataset))
+	for i,(imgs, labels) in enumerate(gallery_loader):
+		# Set batch data.
+		print(imgs.shape)
+		print(labels)
+	
 	1/0
 
-	mnist_dataset = datasets.ImageFolder(root='../inputs/')#, transform=data_transform)
-	print(mnist_dataset)
 	
 	1/0
 
@@ -140,13 +155,13 @@ def make_anno_file(query_dir, gallery_dir, anno_path):
 	#print(df)
 
 
-def __set_annos(img_dir, img_type):
+def __set_annos(img_dir, data_type):
 	annos = []
 	for d in os.listdir(img_dir):
 		dic = {}
-		dic['img_type'] = img_type
+		dic['data_type'] = data_type
 		dic['img_name'] = d
-		dic['img_path'] = img_dir
+		dic['img_path'] = img_dir + d
 		dic['label'] = d.split('_')[0]
 		dic['id'] = d.split('.')[0].split('_')[1]
 		annos.append(dic)
