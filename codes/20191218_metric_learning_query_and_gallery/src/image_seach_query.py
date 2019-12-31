@@ -3,6 +3,7 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 from torchvision import datasets, transforms
 from skimage import io
+from PIL import Image
 
 import os
 import argparse
@@ -13,6 +14,7 @@ import random
 import scipy.misc
 import shutil
 import pandas as pd
+import numpy as np
 
 from losses import CenterLoss
 from mnist_net import Net
@@ -54,7 +56,56 @@ def main():
 	# Model
 	model = Net().to(device)
 	model.load_state_dict(torch.load(args.model_path))
-	print(model)
+	model.eval()
+
+	# Query
+	img_path = args.query_dir + os.listdir(args.query_dir)[0]
+	query_img = Image.open(img_path)
+	transform = transforms.Compose([
+		transforms.ToTensor(),
+		transforms.Normalize((0.1307,), (0.3081,))
+	])
+	query_img = torch.unsqueeze(transform(query_img), 0)
+	query_img = query_img.to(device)
+	with torch.no_grad():
+		query_img = query_img.to(device)
+		query_feat, pred = model(query_img)
+	
+	# Gallery
+	for i, (gallery_imgs, gallery_labels, gallery_paths) in enumerate(gallery_loader):
+		with torch.no_grad():
+			gallery_imgs = gallery_imgs.to(device)
+			gallery_feats, pred = model(gallery_imgs)
+
+	# Calculate cosine similarity.
+	dist_mat = cosine_similarity(query_feat, gallery_feats)
+
+	# Organize ReID ranking.
+	lis = []
+	for i in range(len(gallery_paths)):
+		dic = {}
+		dic['dist'] = dist_mat.tolist()[0][i]
+		dic['label'] = np.array(gallery_labels).tolist()[i]
+		dic['img_path'] = gallery_paths[i]
+		lis.append(dic)
+	df = pd.DataFrame(lis)
+	df = df.sort_values(by=['dist'], ascending=True)
+	df = df.reset_index(drop=True)
+	print(df)
+
+
+def cosine_similarity(qf, gf):
+	epsilon = 0.00001
+	dist_mat = qf.mm(gf.t())
+	qf_norm = torch.norm(qf, p=2, dim=1, keepdim=True) #mx1
+	gf_norm = torch.norm(gf, p=2, dim=1, keepdim=True) #nx1
+	qg_normdot = qf_norm.mm(gf_norm.t())
+
+	dist_mat = dist_mat.mul(1/qg_normdot).cpu().numpy()
+	dist_mat = np.clip(dist_mat, -1+epsilon,1-epsilon)
+	dist_mat = np.arccos(dist_mat)
+	return dist_mat
+
 
 
 def make_query_and_gallery_from_mnist(dataset_dir, query_dir, gallery_dir, anno_path):

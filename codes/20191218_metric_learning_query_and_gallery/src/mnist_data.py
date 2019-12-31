@@ -44,6 +44,7 @@ def show_data(data_loader):
 Object ReID
 """
 def make_query_and_gallery(dataset_dir, query_dir, gallery_dir):
+	# 
 	transform = transforms.Compose([
 		transforms.ToTensor(),
 		transforms.Normalize((0.1307,), (0.3081,))
@@ -51,12 +52,12 @@ def make_query_and_gallery(dataset_dir, query_dir, gallery_dir):
 	testset = datasets.MNIST(dataset_dir, train=False, download=True, transform=transform)
 	q_idx = random.choice(range(len(testset)))
 	g_idxs= random.sample(range(len(testset)), 100)
-	q_img, q_label = testset[q_idx]
-
+	
 	# Save query image.
 	if os.path.exists(query_dir) == True:
 		shutil.rmtree(query_dir)
 	os.makedirs(query_dir)
+	q_img, q_label = testset[q_idx]
 	scipy.misc.imsave(query_dir+'{}_{}.png'.format(q_label, q_idx), q_img.numpy()[0])
 	
 	# Save gallery images.
@@ -107,10 +108,11 @@ class ReIDDataset(Dataset):
 		assert os.path.exists(img_path)
 		image = io.imread(img_path)
 		label = self.df.loc[idx, 'label']
+		img_path = self.df.loc[idx, 'img_path']
 		if self.transform:
 			image = self.transform(image)
 		
-		return image, label
+		return image, label, img_path
 
 
 def load_query_and_gallery(anno_path, img_show=False):
@@ -122,19 +124,11 @@ def load_query_and_gallery(anno_path, img_show=False):
 	# Query
 	query_dataset = ReIDDataset(anno_path, 'query', transform)
 	query_loader = DataLoader(query_dataset, batch_size=len(query_dataset), shuffle=False)
-	#for i,(imgs, labels) in enumerate(query_loader):
-	#	print(imgs.shape)
-	#	print(labels)
-	#print('')
-	
+		
 	# Gallery
 	gallery_dataset = ReIDDataset(anno_path, 'gallery', transform)
-	gallery_loader = DataLoader(gallery_dataset, batch_size=len(gallery_dataset), shuffle=True)
-	#for i,(imgs, labels) in enumerate(gallery_loader):
-	#	print(imgs.shape)
-	#	print(labels)
-	#print('')
-
+	gallery_loader = DataLoader(gallery_dataset, batch_size=len(gallery_dataset), shuffle=False)
+	
 	# Class
 	classes = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
