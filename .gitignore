@@ -103,10 +103,11 @@ ENV/
 # etc
 codes/*/data/
 codes/20190805/pytorch_advanced/
-codes/20191211_metric_learning_mnist_original_center/outputs/
 codes/20191218_metric_learning_query_and_gallery/inputs/
 codes/20200104_metric_learning_mnist/inputs/
 codes/20200104_metric_learning_mnist/outputs/
+codes/20200105_metric_learning_mnist_query_and_gallery/inputs/
+codes/20200105_metric_learning_mnist_query_and_gallery/outputs/
 *pth
 
 
