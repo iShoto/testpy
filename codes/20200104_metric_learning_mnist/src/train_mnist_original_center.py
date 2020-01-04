@@ -8,6 +8,7 @@ import torch.optim.lr_scheduler as lr_scheduler
 from torch.autograd.function import Function
 import torchvision
 
+import os
 import matplotlib.pyplot as plt
 import argparse
 from tqdm import trange
@@ -153,7 +154,7 @@ def visualize(feat, labels, epoch, vis_img_path):
 def parse_args():
 	arg_parser = argparse.ArgumentParser(description="parser for focus one")
 
-	arg_parser.add_argument("--dataset_dir", type=str, default='D:/workspace/datasets')
+	arg_parser.add_argument("--dataset_dir", type=str, default='../inputs/')
 	arg_parser.add_argument("--model_dir", type=str, default='../outputs/models/checkpoints/')
 	arg_parser.add_argument("--model_path_temp", type=str, default='../outputs/models/checkpoints/mnist_original_softmax_center_epoch_{}.pth')
 	arg_parser.add_argument("--vis_img_dir", type=str, default='../outputs/visual/')
@@ -161,9 +162,9 @@ def parse_args():
 	
 	args = arg_parser.parse_args()
 
-	os.makedirs(args.dataset_dir)
-	os.makedirs(args.model_dir)
-	os.makedirs(args.vis_img_dir)
+	os.makedirs(args.dataset_dir, exist_ok=True)
+	os.makedirs(args.model_dir, exist_ok=True)
+	os.makedirs(args.vis_img_dir, exist_ok=True)
 
 	return args
 

@@ -66,7 +66,7 @@ def test(device, test_loader, model, nllloss, loss_weight, centerloss):
 def parse_args():
 	arg_parser = argparse.ArgumentParser(description="parser for focus one")
 
-	arg_parser.add_argument("--dataset_dir", type=str, default='D:/workspace/datasets')
+	arg_parser.add_argument("--dataset_dir", type=str, default='../inputs/')
 	arg_parser.add_argument("--model_path", type=str, default='../outputs/models/mnist_original_softmax_center_epoch_099.pth')
 	
 	args = arg_parser.parse_args()

@@ -22,7 +22,7 @@ PyTorchについて色々調べつつ実装してみた。
 ポイントは損失関数で、今回はCenterLossというのを使っているが、
 説明は[参照記事](https://cpp-learning.com/center-loss/)が詳しい。
 
-本記事で説明するコードは[ここ]()にある。
+本記事で説明するコードは[ここ](https://github.com/iShoto/testpy/tree/master/codes/20200104_metric_learning_mnist)にある。
 以下の`train_mnist_original_center.py`の`main()`を実行すると、
 参照記事と同じような結果が得られるが、個人的にコード整理してみたので、
 上述の処理フローに従って順に説明する。
