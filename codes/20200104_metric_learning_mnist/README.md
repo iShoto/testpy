@@ -20,7 +20,7 @@ A model is learned by adding Center Loss for metric learning to NLL Loss for ima
 # Installation
  
 ```sh
-git clone  https://github.com/iShoto/testpy.git
+git clone https://github.com/iShoto/testpy.git
 ```
 
 
