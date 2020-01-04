@@ -406,6 +406,7 @@ Epoch: 100, train acc: 1.0     , train loss: 0.000272, test acc: 0.981805, test 
 
 
 ## 参考文献
+- [【深層距離学習】Center Lossを徹底解説 - はやぶさの技術ノート](https://cpp-learning.com/center-loss/)
 - [PyTorch まずMLPを使ってみる - cedro-blog](http://cedro3.com/ai/pytorch-mlp/)
 - [Normalization in the mnist example - PyTorch Forums](https://discuss.pytorch.org/t/normalization-in-the-mnist-example/457)
 - [ChainerのDefine by Runとは？ - HELLO CYBERNETICS](https://www.hellocybernetics.tech/entry/2017/01/14/060758)
