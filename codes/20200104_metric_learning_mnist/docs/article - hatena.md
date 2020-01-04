@@ -1,37 +1,34 @@
-# MNISTでMetric Learning
-
-Person ReIDが必要になったので、まずはMNISTを題材にMetric Learningを勉強した。
+Person ReIDが必要になったので、まずはMNISTを題材に距離学習を勉強している。
 あと、これまでKerasを使ってきたけど、PyTorch使えないと厳しい世の中になってきたので、
-PyTorchについて色々調べつつ実装した。
+PyTorchについて色々調べつつ実装してみた。
 
 なお今回は[こちらの記事](https://cpp-learning.com/center-loss/)（以下、参照記事）を参考にしている。
-Metric Learningをメインで学びたい人は本記事より参照記事を読むことをお薦めする。
+距離学習をメインで学びたい人は本記事より参照記事を読むことをお薦めする。
 本記事はPyTorch入門みたいな要素が強いので。
 
 
 ## 概要
-
-Metric Learningをもの凄く簡単に言うと画像分類の拡張。
-なので、処理フローは画像分類と同じでだいたい以下のようになる。
+距離学習をもの凄く簡単に言うと画像分類の拡張。
+なので、処理フローはだいたい画像分類と同じで以下のようになる。
 
 1. データ準備
 2. モデル定義
-3. ロス定義
+3. 損失関数定義
 4. 最適化関数定義
 5. 訓練検証
 
-Metric Learningは、同じクラスは近く異なるクラスは遠くなるようにモデルを学習することで、
-未知のクラスの同定を行うことができる。ここが画像分類と違うところ。
-ポイントはロス関数で、今回はCenterLossというのを使っているが、
+距離学習は、同じクラスは近く異なるクラスは遠くなるようにモデルを学習することで、
+未知のクラスの同定を行えるのが画像分類と違うところ。
+ポイントは損失関数で、今回はCenterLossというのを使っているが、
 説明は[参照記事](https://cpp-learning.com/center-loss/)が詳しい。
 
 本記事で説明するコードは[ここ]()にある。
-以下の`train_mnist_original_center.py`のmain関数を実行すると、
-参照記事と同じような結果が得られるが、個人的にコード整理しているので、
-上述の処理フローに従って個々に説明する。
+以下の`train_mnist_original_center.py`の`main()`を実行すると、
+参照記事と同じような結果が得られるが、個人的にコード整理してみたので、
+上述の処理フローに従って順に説明する。
 
 
-```py
+```python
 def main():
 	# Arguments
 	args = parse_args()
@@ -79,10 +76,9 @@ def main():
 
 
 ## 1. データ準備
-
 先に引数の説明を少し。
 
-```py
+```python
 	# Arguments
 	args = parse_args()
 ```
@@ -96,11 +92,11 @@ def main():
 だんだんとクラス内でまとまりクラス間が離れていく様子が確認できる。
 下図は100エポック後の特徴分布。
 
-```py
+```python
 def parse_args():
 	arg_parser = argparse.ArgumentParser(description="parser for focus one")
 
-	arg_parser.add_argument("--dataset_dir", type=str, default='D:/workspace/datasets')
+	arg_parser.add_argument("--dataset_dir", type=str, default='../inputs/')
 	arg_parser.add_argument("--model_path_temp", type=str, default='../outputs/models/checkpoints/mnist_original_softmax_center_epoch_{}.pth')
 	arg_parser.add_argument("--vis_img_path_temp", type=str, default='../outputs/visual/epoch_{}.png')
 	
@@ -109,12 +105,13 @@ def parse_args():
 	return args
 ```
 
-![pic](epoch_100.png)
+[f:id:Shoto:20200104213047p:plain]
+
 
 では、MNISTのデータセットを取得する。
 MNIST関連は、`mnist_loader.py`という別ファイルを作って処理している。
 
-```py
+```python
 # Dataset
 train_loader, test_loader, classes = mnist_loader.load_dataset(args.dataset_dir, img_show=True)
 ```
@@ -125,11 +122,11 @@ train_loader, test_loader, classes = mnist_loader.load_dataset(args.dataset_dir,
 #### 1. 画像の前処理
 `torchvision`の`transform`を利用する。
 `ToTensor()`でPyTorchの`torch.Tensor`型に変換する。
-他にも、クロップやフリップなどData Augmentation的な事を行える。
-また、`Normalize()`で正規化を行う。
-なおMNISTは自然画像ではないので、平均0.1307、標準偏差0.3081となるような正規化を行っている。
+他にも、クロップやフリップなどData Augmentation的な事を行えるが、今回は未実施。
+今回は`Normalize()`で正規化を行っている。
+なおMNISTは自然画像ではないので、平均0.1307、標準偏差0.3081となるようにする。
 
-```py
+```python
 from torchvision import transforms
 transform = transforms.Compose([
 	transforms.ToTensor(),
@@ -144,27 +141,26 @@ transform = transforms.Compose([
 第3引数がTrueの場合は保存場所にMNISTデータがない場合に自動でダウンロードしてくれる。
 第4引数で先に定義したtransformをセットする。
 
-```py
+```python
 from torchvision import datasets
 trainset = datasets.MNIST(dataset_dir, train=True, download=True, transform=transform)
 ```
 
 #### 3. データローダーを定義
 `torch.utils.data`の`DataLoader`を利用して、指定バッチ数分のデータを取得する。
-第１引数は２で定義したデータセット。
-第２引数はバッチサイズ。
-第３引数はデータシャッフルするか否か。訓練時はTrueが妥当。
-第４引数はデータロードの並列処理数。
+第1引数は2で定義したデータセット。
+第2引数はバッチサイズ。
+第3引数はデータシャッフルするか否か。訓練時はTrueが妥当。
+第4引数はデータロードの並列処理数。
 
-```py
+```python
 from torch.utils.data import DataLoader
 train_loader = DataLoader(trainset, batch_size=train_batch_size, shuffle=True, num_workers=0)
 ```
 
 上記のメソッドを組み合わせることで、`mnist_loader.load_dataset()`は次のようになる。
 
-
-```py
+```python
 def load_dataset(dataset_dir, train_batch_size=128, test_batch_size=128, img_show=False):
 	# Dataset
 	transform = transforms.Compose([
@@ -186,7 +182,7 @@ def load_dataset(dataset_dir, train_batch_size=128, test_batch_size=128, img_sho
 `show_data()`はMNISTを可視化するメソッド。
 `torchvision.utils.make_grid()`により train_loader のバッチを簡単に可視化できる。
 
-```py
+```python
 def show_data(data_loader):
 	images, labels = iter(data_loader).next()  # data_loader のミニバッチの image を取得
 	img = torchvision.utils.make_grid(images, nrow=16, padding=1)  # nrom*nrom のタイル形状の画像を作る
@@ -199,12 +195,11 @@ def show_data(data_loader):
 
 
 ## 2. モデル定義
-
-PyTorchでは処理をGPUかCPUのどちらで行うか`torch.device`で明示的に選択して、
+PyTorchでは処理をGPUとCPUのどちらで行うか`torch.device`で明示的に選択して、
 それをモデルやデータにセットする必要がある。
 モデル定義はMNIST向けのを`mnist_net.py`の`Net()`で別途定義している。
 
-```py
+```python
 # Device
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -213,37 +208,15 @@ model = Net().to(device)
 print(model)
 ```
 
-クラス定義は次の通り。
-6つの畳み込み層とPReLUの後、2次元空間に落とし込んだ特徴ip1と、
-それをPReLUに通して10次元空間に写像したip2を出力する。
-ip1は上で示した特徴分布で、ip2はクラス分類に利用する。
-
-```sh
-Net(
-  (conv1_1): Conv2d(1, 32, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2))
-  (prelu1_1): PReLU(num_parameters=1)
-  (conv1_2): Conv2d(32, 32, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2))
-  (prelu1_2): PReLU(num_parameters=1)
-  (conv2_1): Conv2d(32, 64, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2))
-  (prelu2_1): PReLU(num_parameters=1)
-  (conv2_2): Conv2d(64, 64, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2))
-  (prelu2_2): PReLU(num_parameters=1)
-  (conv3_1): Conv2d(64, 128, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2))
-  (prelu3_1): PReLU(num_parameters=1)
-  (conv3_2): Conv2d(128, 128, kernel_size=(5, 5), stride=(1, 1), padding=(2, 2))
-  (prelu3_2): PReLU(num_parameters=1)
-  (ip1): Linear(in_features=1152, out_features=2, bias=True)
-  (preluip1): PReLU(num_parameters=1)
-  (ip2): Linear(in_features=2, out_features=10, bias=False)
-)
-```
-
-なお、`mnist_net.py`の`Net()`は以下のようになる。
+`mnist_net.py`の`Net()`は次の通り。
 **Define by Run**では、
 `__init__()`で計算グラフを幾つか定義して、ネットワーク生成時に１度だけ呼びし、
 データ入力時に`forward()`を呼び出す使用となっている。
+6つの畳み込み層とPReLUの後、2次元空間に落とし込んだ特徴ip1と、
+それをPReLUに通して10次元空間に写像したip2を出力する。
+ip1が特徴分布で、ip2はクラス分類に利用する。
 
-```py
+```python
 class Net(nn.Module):
 	def __init__(self):
 		super(Net, self).__init__()
@@ -305,9 +278,8 @@ PReLU
 1次元に変換している。
 
 
-## 3. ロス定義
-
-ロスは、クラス分類用の`NLL Loss`とMetric Learninig用の`Center Loss`を加重加算したものを利用する。
+## 3. 損失関数定義
+損失関数は、クラス分類用の`NLL Loss`にMetric Learninig用の`Center Loss`を加重加算したものを利用する。
 
 ```
 Loss = NLL Loss + α * Center Loss, α is weight
@@ -318,16 +290,16 @@ softmaxの最大値は結果の確信度を表すが、それをマイナスの�
 NLL Lossにより、高い確信度であれば低いロス、低い確信度であれば高いロスを割り当てることができる。
 ip2のsoftmax（定義したモデルの出力）を入力とする。
 
-一方`Center Loss`は特徴の中心のロス。ip1を入力する。
+一方`Center Loss`は特徴の中心の損失関数。ip1を入力する。
 詳しい説明は[参照記事](https://cpp-learning.com/center-loss/)に任せる。
-ちなみに、自分はMetric Learningに
+ちなみに、自分は距離学習に
 [ArcFace](https://arxiv.org/abs/1801.07698)から入ったので、
 `Center Loss`はこの記事以外では使わないかな、と思っている。
 
-PyTorchで、ロスは次のように定義される。
+PyTorchで、損失関数は次のように定義される。
 `CenterLoss()`は自作関数でクラス数と特徴数が引数となる。
 
-```py
+```python
 # NLL Loss & Center Loss
 nllloss = nn.NLLLoss().to(device)  # CrossEntropyLoss = log_softmax + NLLLoss
 loss_weight = 1  # weight
@@ -337,14 +309,13 @@ loss = nllloss(pred, labels) + loss_weight * centerloss(labels, ip1)
 ```
 
 ## 4. 最適化関数定義
-
 最適化関数にはSGDを利用するが、クラス分類と距離特徴の両方を行っているので、
-それぞれの最適化関数を定義する。
-前者については、学習率の減衰を`lr_scheduler.StepLR`で行う。
+それぞれで最適化関数を定義する。
+前者については、学習率の減衰を`lr_scheduler.StepLR()`で行う。
 第一引数はクラス分類用の最適化関数、第二引数は学習率を更新するタイミングのエポック数、
 第三引数は学習率の更新率。
 
-```py
+```python
 # Optimizer
 dnn_optimizer = optim.SGD(model.parameters(), lr=0.001, momentum=0.9, weight_decay=0.0005)
 center_optimizer = optim.SGD(centerloss.parameters(), lr =0.5)
@@ -356,13 +327,13 @@ sheduler = lr_scheduler.StepLR(dnn_optimizer, 20, gamma=0.8)
 これまで定義してきた変数と関数を利用して訓練を行う。
 エポックごとに`train()`を呼び出す。
 
-```py
+```python
 train_acc, train_loss, feat, labels = train(device, train_loader, model, nllloss, loss_weight, centerloss, dnn_optimizer, center_optimizer)
 ```
 
 `train()`は一般的な機械学習。
 
-```py
+```python
 def train(device, train_loader, model, nllloss, loss_weight, centerloss, dnn_optimizer, center_optimizer):
 	running_loss = 0.0
 	pred_list = []
@@ -417,7 +388,11 @@ optimizer.step()  # パラメータの更新
 また`sklearn.metrics`の`classification_report()`を利用すると、
 簡単に精度が算出できる。
 
-訓練と検証の過程は以下の通り。
+訓練と検証の精度と損失の変化は以下の通り。
+
+```
+
+```
 
 
 
