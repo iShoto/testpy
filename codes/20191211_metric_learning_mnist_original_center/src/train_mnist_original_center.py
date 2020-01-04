@@ -3,7 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torchvision import datasets, transforms
-from  torch.utils.data import DataLoader
+from torch.utils.data import DataLoader
 import torch.optim.lr_scheduler as lr_scheduler
 from torch.autograd.function import Function
 import torchvision
@@ -24,11 +24,11 @@ import mnist_loader
 def main():
 	args = parse_args()
 
-	# Device
-	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 	# Dataset
 	train_loader, test_loader, classes = mnist_loader.load_dataset(args.dataset_dir, img_show=True)
+
+	# Device
+	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 	# Model
 	model = Net().to(device)
@@ -85,7 +85,7 @@ def train(device, train_loader, model, nllloss, loss_weight, centerloss, dnn_opt
 		center_optimizer.zero_grad()
 		# Calculate gradient.
 		loss.backward()
-		# Upate parameters.
+		# Update parameters.
 		dnn_optimizer.step()
 		center_optimizer.step()
 		# For calculation.
@@ -113,8 +113,8 @@ def test(device, test_loader, model, nllloss, loss_weight, centerloss):
 	running_loss = 0.0
 	pred_list = []
 	label_list = []
-	with torch.no_grad():
-		for i,(imgs, labels) in enumerate(test_loader):
+	for i,(imgs, labels) in enumerate(test_loader):
+		with torch.no_grad():
 			# Set batch data.
 			imgs, labels = imgs.to(device), labels.to(device)
 			# Predict labels.
