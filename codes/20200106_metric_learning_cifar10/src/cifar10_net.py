@@ -39,12 +39,12 @@ class Net(nn.Module):
 
 
 	def forward(self, x):
-		x = self.pool(nn.PReLU(self.conv1(x)))
-		x = self.pool(nn.PReLU(self.conv2(x)))
+		x = self.pool(F.relu(self.conv1(x)))
+		x = self.pool(F.relu(self.conv2(x)))
 		x = x.view(-1, 16 * 5 * 5)
-		x = nn.PReLU(self.fc1(x))
-		x = nn.PReLU(self.fc2(x))
-		ip1 = nn.PReLU(self.fc3(x))
+		x = F.relu(self.fc1(x))
+		x = F.relu(self.fc2(x))
+		ip1 = F.relu(self.fc3(x))
 		ip2 = self.fc4(ip1)
 		return ip1, F.log_softmax(ip2, dim=1)
 
