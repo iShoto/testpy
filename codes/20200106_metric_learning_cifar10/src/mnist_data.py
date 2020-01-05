@@ -127,13 +127,15 @@ def load_query_and_gallery(anno_path, img_show=False):
 		
 	# Gallery
 	gallery_dataset = ReIDDataset(anno_path, 'gallery', transform)
-	gallery_loader = DataLoader(gallery_dataset, batch_size=len(gallery_dataset), shuffle=True)
+	#gallery_loader = DataLoader(gallery_dataset, batch_size=len(gallery_dataset), shuffle=True)
+	gallery_loader = DataLoader(gallery_dataset, batch_size=8, shuffle=True)
 	
 	# Class
 	classes = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
 
 	# debug
 	print('num query: {}, num gallery: {}'.format(len(query_dataset), len(gallery_dataset)))
+	print('')
 	if img_show == True:
 		show_data(gallery_loader)
 

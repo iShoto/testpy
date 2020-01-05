@@ -16,7 +16,6 @@ import shutil
 import pandas as pd
 import numpy as np
 
-from losses import CenterLoss
 from mnist_net import Net
 import mnist_data
 
@@ -42,12 +41,24 @@ def main():
 		with torch.no_grad():
 			query_img = query_img.to(device)
 			query_feat, pred = model(query_img)
-		
+
+	# debug
+	print('Query Image Label: {}'.format(query_label.tolist()[0]))
+	print('')
+	
 	# Gallery
-	for i, (gallery_imgs, gallery_labels, gallery_paths) in enumerate(gallery_loader):
+	gallery_feats = []
+	gallery_labels = []
+	gallery_paths = []
+	for i, (g_imgs, g_labels, g_paths) in enumerate(gallery_loader):
 		with torch.no_grad():
-			gallery_imgs = gallery_imgs.to(device)
-			gallery_feats, pred = model(gallery_imgs)
+			g_imgs = g_imgs.to(device)
+			g_feats_temp, preds_temp = model(g_imgs)
+			gallery_feats.append(g_feats_temp)
+			gallery_labels.append(g_labels)
+			gallery_paths += list(g_paths)  # Data type of g_paths is tuple.
+	gallery_feats = torch.cat(gallery_feats, 0)
+	gallery_labels = torch.cat(gallery_labels, 0)
 
 	# Calculate cosine similarity.
 	dist_matrix = cosine_similarity(query_feat, gallery_feats)
@@ -65,8 +76,11 @@ def main():
 	df = df.reset_index(drop=True)
 
 	# debug
-	print(df)
+	print('Search Result')
+	print(df.head(20))
+	print('')
 	print(df['label'].value_counts())
+	print('')
 
 
 def make_query_and_gallery_from_mnist(dataset_dir, query_dir, gallery_dir, anno_path):
@@ -84,19 +98,22 @@ def cosine_similarity(qf, gf):
 	dist_mat = dist_mat.mul(1/qg_normdot).cpu().numpy()
 	dist_mat = np.clip(dist_mat, -1+epsilon,1-epsilon)
 	dist_mat = np.arccos(dist_mat)
+
 	return dist_mat
 
 
 def parse_args():
 	arg_parser = argparse.ArgumentParser(description="parser for focus one")
 
-	arg_parser.add_argument("--dataset_dir", type=str, default='D:/workspace/datasets')
+	arg_parser.add_argument("--dataset_dir", type=str, default='../inputs/')
 	arg_parser.add_argument("--query_dir", type=str, default='../inputs/query/')
 	arg_parser.add_argument("--gallery_dir", type=str, default='../inputs/gallery/')
 	arg_parser.add_argument("--anno_path", type=str, default='../inputs/anno.csv')
 	arg_parser.add_argument("--model_path", type=str, default='../outputs/models/mnist_original_softmax_center_epoch_099.pth')
 	
 	args = arg_parser.parse_args()
+
+	os.makedirs(args.dataset_dir, exist_ok=True)
 
 	return args
 

@@ -1,5 +1,0 @@
-- [Shows image with specific index from MNIST dataset - pytorch](https://discuss.pytorch.org/t/shows-image-with-specific-index-from-mnist-dataset/29406)
-- [Saving a Numpy array as an image - stackoverflow](https://stackoverflow.com/questions/902761/saving-a-numpy-array-as-an-image)
-- [機械学習のお勉強（自作データセットでCNN by pytorch） - 空飛ぶロボットのつくりかた](http://robonchu.hatenablog.com/entry/2017/10/23/173317)
-- [pytorchによる画像分類入門 - Qiita](https://qiita.com/sheep96/items/0c2c8216d566f58882aa)
-- [PyTorch transforms/Dataset/DataLoaderの基本動作を確認する - Qiita](https://qiita.com/takurooo/items/e4c91c5d78059f92e76d)
