@@ -135,6 +135,7 @@ def load_query_and_gallery(anno_path, img_show=False):
 
 	# debug
 	print('num query: {}, num gallery: {}'.format(len(query_dataset), len(gallery_dataset)))
+	print('')
 	if img_show == True:
 		show_data(gallery_loader)
 

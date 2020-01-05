@@ -20,18 +20,19 @@
 
 ## 1. データ準備
 テスト時、画像分類ではテストデータを用意するが、
-画像検索では、検索画像となるQueryと検索対象画像群となるGalleryが必要になる。
+画像検索では検索画像となるQueryと検索対象画像群となるGalleryが必要になる。
 そこでまずはテストデータをQueryとGalleryに分ける。
 また後々のことを考えて、いったん画像に保存したものを読み込むようにする。
 
-メインファイルとなる`image_retrieval.py`で`make_query_and_gallery_from_mnist()`を呼び出す。
+ここではメインファイルの`image_retrieval.py`で`make_query_and_gallery_from_mnist()`を呼び出す。
 これにより、MNISTから1枚をQueryに100枚をGalleryにランダム選択して振り分ける。
 各画像はQueryとGallery各々のディレクトリーに保存され、それらの情報はCSVファイルに記載される。
 
 `dataset_dir`はMNISTを保存するディレクトリー、
 `query_dir`はQuery画像を保存するディレクトリー、
 `gallery_dir`はGallery画像を保存するディレクトリー、
-`anno_path`はQueryとGalleryの画像情報を記載したCSVファイル。
+`anno_path`はQueryとGalleryの画像情報を記載したCSVファイル
+である。
 
 ```python
 make_query_and_gallery_from_mnist(args.dataset_dir, args.query_dir, args.gallery_dir, args.anno_path)
@@ -52,7 +53,7 @@ def make_query_and_gallery_from_mnist(dataset_dir, query_dir, gallery_dir, anno_
 `make_query_and_gallery()`は次の通り。
 transformしたMNISTを取得して、Query画像1枚とGallery画像100枚をランダムに選択後、
 各々のディレクトリーに画像として保存している。
-保存前の画像はtransfromで正規化した後なので、0～255になっていないが、
+保存前の画像はtransfromで正規化した後なので0～255になっていないが、
 `scipy.misc.imsave()`を使うと0～255にして保存してくれる。
 
 ```python
@@ -190,7 +191,7 @@ model.eval()
 ## 3. 特徴抽出
 
 `1. データ準備`で説明した`query_loader`を利用する。
-と言っても、画像は1枚だけなので、学習済みモデルに通して特徴を取得するだけ。
+と言っても画像は1枚だけなので、学習済みモデルに通して特徴を取得するだけ。
 `model`の出力は2次元特徴と予測結果なるが、今回は前者のみを利用する。
 
 ```python
@@ -224,8 +225,7 @@ gallery_labels = torch.cat(gallery_labels, 0)
 ## 4. 距離算出
 
 `3. 特徴抽出`でQueryの特徴`query_feat`とGalleryの特徴`gallery_feats`が取得できた。
-`query_feat`と`gallery_feats`の各特徴との距離を計る。
-今回はコサイン類似度を利用する。
+`query_feat`と`gallery_feats`の各特徴との距離を算出するためにコサイン類似度を利用する。
 
 ```python
 dist_matrix = cosine_similarity(query_feat, gallery_feats)
@@ -299,8 +299,8 @@ Search Result
 19  0.698637  ../inputs/gallery/1_1038.png      1
 ```
 
-labelのカウントしてみると、ラベルが9の画像は9枚あることが分かる。
-よって、Galleryにあるラベル9の全画像を検索上位に持ってくることができていることが分かる。
+labelをカウントすると、ラベルが9の画像は9枚あることが分かる。
+よって、Galleryにあるラベル9の全画像を検索上位に持ってくることができたことが分かる。
 
 ```sh
 1    15
@@ -309,7 +309,7 @@ labelのカウントしてみると、ラベルが9の画像は9枚あること�
 8    11
 4    10
 3    10
-9     9 # <- this
+9     9  # <- this
 6     7
 2     7
 5     6
@@ -317,8 +317,7 @@ labelのカウントしてみると、ラベルが9の画像は9枚あること�
 
 
 ## 参考文献
-
-- [A Tiny Person ReID Baseline - github](https://github.com/lulujianjie/person-reid-tiny-baseline))
+- [A Tiny Person ReID Baseline - github](https://github.com/lulujianjie/person-reid-tiny-baseline)
 - [Shows image with specific index from MNIST dataset - pytorch](https://discuss.pytorch.org/t/shows-image-with-specific-index-from-mnist-dataset/29406)
 - [Saving a Numpy array as an image - stackoverflow](https://stackoverflow.com/questions/902761/saving-a-numpy-array-as-an-image)
 - [機械学習のお勉強（自作データセットでCNN by pytorch） - 空飛ぶロボットのつくりかた](http://robonchu.hatenablog.com/entry/2017/10/23/173317)

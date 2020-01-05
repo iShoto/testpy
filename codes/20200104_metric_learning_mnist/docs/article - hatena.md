@@ -79,8 +79,8 @@ def main():
 先に引数の説明を少し。
 
 ```python
-	# Arguments
-	args = parse_args()
+# Arguments
+args = parse_args()
 ```
 
 `dataset_dir`はMNISTデータの保存場所。
@@ -119,7 +119,7 @@ train_loader, test_loader, classes = mnist_loader.load_dataset(args.dataset_dir,
 `load_dataset`は、train_loader、test_loader、クラス名を取得するメソッド。
 ここからPyTorch色が強くなるが、データ準備では次の手順を踏む。
 
-#### 1. 画像の前処理
+##### 1. 画像の前処理
 `torchvision`の`transform`を利用する。
 `ToTensor()`でPyTorchの`torch.Tensor`型に変換する。
 他にも、クロップやフリップなどData Augmentation的な事を行えるが、今回は未実施。
@@ -134,7 +134,7 @@ transform = transforms.Compose([
 ])
 ```
 
-#### 2. 画像データセットを取得
+##### 2. 画像データセットを取得
 `torchvision`の`datasets.MNIST`を使うとMNISTが簡単に利用できる。
 第1引数はMNISTデータの保存場所。
 第2引数でtrain用かtest用かを選ぶ。
@@ -146,7 +146,7 @@ from torchvision import datasets
 trainset = datasets.MNIST(dataset_dir, train=True, download=True, transform=transform)
 ```
 
-#### 3. データローダーを定義
+##### 3. データローダーを定義
 `torch.utils.data`の`DataLoader`を利用して、指定バッチ数分のデータを取得する。
 第1引数は2で定義したデータセット。
 第2引数はバッチサイズ。
@@ -214,7 +214,7 @@ print(model)
 データ入力時に`forward()`を呼び出す使用となっている。
 6つの畳み込み層とPReLUの後、2次元空間に落とし込んだ特徴ip1と、
 それをPReLUに通して10次元空間に写像したip2を出力する。
-ip1が特徴分布で、ip2はクラス分類に利用する。
+ip1が特徴分布で、ip2は画像分類に利用する。
 
 ```python
 class Net(nn.Module):
@@ -279,7 +279,7 @@ PReLU
 
 
 ## 3. 損失関数定義
-損失関数は、クラス分類用の`NLL Loss`にMetric Learninig用の`Center Loss`を加重加算したものを利用する。
+損失関数は、画像分類用の`NLL Loss`にMetric Learninig用の`Center Loss`を加重加算したものを利用する。
 
 ```
 Loss = NLL Loss + α * Center Loss, α is weight
@@ -309,10 +309,10 @@ loss = nllloss(pred, labels) + loss_weight * centerloss(labels, ip1)
 ```
 
 ## 4. 最適化関数定義
-最適化関数にはSGDを利用するが、クラス分類と距離特徴の両方を行っているので、
+最適化関数にはSGDを利用するが、画像分類と距離特徴の両方を行っているので、
 それぞれで最適化関数を定義する。
 前者については、学習率の減衰を`lr_scheduler.StepLR()`で行う。
-第一引数はクラス分類用の最適化関数、第二引数は学習率を更新するタイミングのエポック数、
+第一引数は画像分類用の最適化関数、第二引数は学習率を更新するタイミングのエポック数、
 第三引数は学習率の更新率。
 
 ```python

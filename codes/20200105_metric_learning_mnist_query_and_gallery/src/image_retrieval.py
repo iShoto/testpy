@@ -16,7 +16,6 @@ import shutil
 import pandas as pd
 import numpy as np
 
-from losses import CenterLoss
 from mnist_net import Net
 import mnist_data
 
@@ -26,7 +25,7 @@ def main():
 	args = parse_args()
 
 	# Get dataset.
-	#make_query_and_gallery_from_mnist(args.dataset_dir, args.query_dir, args.gallery_dir, args.anno_path)
+	make_query_and_gallery_from_mnist(args.dataset_dir, args.query_dir, args.gallery_dir, args.anno_path)
 	query_loader, gallery_loader, classes = mnist_data.load_query_and_gallery(args.anno_path, img_show=False)
 
 	# Set device, GPU or CPU.
@@ -99,19 +98,22 @@ def cosine_similarity(qf, gf):
 	dist_mat = dist_mat.mul(1/qg_normdot).cpu().numpy()
 	dist_mat = np.clip(dist_mat, -1+epsilon,1-epsilon)
 	dist_mat = np.arccos(dist_mat)
+
 	return dist_mat
 
 
 def parse_args():
 	arg_parser = argparse.ArgumentParser(description="parser for focus one")
 
-	arg_parser.add_argument("--dataset_dir", type=str, default='D:/workspace/datasets')
+	arg_parser.add_argument("--dataset_dir", type=str, default='../inputs/')
 	arg_parser.add_argument("--query_dir", type=str, default='../inputs/query/')
 	arg_parser.add_argument("--gallery_dir", type=str, default='../inputs/gallery/')
 	arg_parser.add_argument("--anno_path", type=str, default='../inputs/anno.csv')
 	arg_parser.add_argument("--model_path", type=str, default='../outputs/models/mnist_original_softmax_center_epoch_099.pth')
 	
 	args = arg_parser.parse_args()
+
+	os.makedirs(args.dataset_dir, exist_ok=True)
 
 	return args
 
