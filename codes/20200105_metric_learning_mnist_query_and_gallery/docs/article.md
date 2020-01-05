@@ -270,7 +270,7 @@ df = df.reset_index(drop=True)
 Queryが9で、Galleryも9がindexの0から8まで占めている。
 
 ```sh
-$ python image_seach_query.py
+$ python image_retrieval.py
 num query: 1, num gallery: 100
 
 Query Image Label: 9
