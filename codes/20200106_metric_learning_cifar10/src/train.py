@@ -15,10 +15,8 @@ import numpy as np
 from sklearn.metrics import classification_report
 
 from losses import CenterLoss
-from mnist_net import Net
-import mnist_loader
-
-# cf. https://cpp-learning.com/center-loss/
+from cifar10_net import Net
+import cifar10_data
 
 
 def main():
@@ -28,8 +26,8 @@ def main():
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 	# Dataset
-	train_loader, test_loader, classes = mnist_loader.load_dataset(args.dataset_dir, img_show=True)
-
+	train_loader, test_loader, classes = cifar10_data.load_dataset(args.dataset_dir, img_show=False)
+	
 	# Model
 	model = Net().to(device)
 	print(model)
