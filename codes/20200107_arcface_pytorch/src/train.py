@@ -33,11 +33,16 @@ if __name__ == '__main__':
 		visualizer = Visualizer()
 	device = torch.device("cuda")
 
-	train_dataset = dataset.Dataset(opt.train_root, opt.train_list, phase='train', input_shape=opt.input_shape)
+	train_dataset = dataset.Dataset(opt.train_root,  # '/data/Datasets/webface/CASIA-maxpy-clean-crop-144/'
+									opt.train_list,  # '/data/Datasets/webface/train_data_13938.txt'
+									phase='train', 
+									input_shape=opt.input_shape  # (1, 128, 128)
+	)
 	trainloader = data.DataLoader(train_dataset,
-								  batch_size=opt.train_batch_size,
+								  batch_size=opt.train_batch_size,  # 16
 								  shuffle=True,
-								  num_workers=opt.num_workers)
+								  num_workers=opt.num_workers  # 4
+	)
 
 	identity_list = test.get_lfw_list(opt.lfw_test_list)
 	img_paths = [os.path.join(opt.lfw_root, each) for each in identity_list]
