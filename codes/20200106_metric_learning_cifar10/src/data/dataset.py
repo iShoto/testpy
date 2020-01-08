@@ -8,8 +8,6 @@ import torchvision
 import cv2
 import sys
 
-# cf. https://github.com/ronghuaiyang/arcface-pytorch
-
 
 class Dataset(data.Dataset):
 

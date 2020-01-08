@@ -43,7 +43,7 @@ def show_data(data_loader, classes):
 	npimg = img.numpy()
 	img_trans = np.transpose(npimg, (1,2,0))
 	h, w, c = img_trans.shape
-	img_trans = cv2.resize(img_trans, (w*3, h*3))
+	img_trans = cv2.resize(img_trans, (w*2, h*2))
 
 	# Show an image.
 	cv2.imshow('image', img_trans)
