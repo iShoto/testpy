@@ -10,103 +10,91 @@ import torchvision.transforms as transforms
 
 import os
 import argparse
+from sklearn.metrics import classification_report
 
 from models import *
-#from utils import progress_bar
+from datasets import cifar10
+
+def main():
+	args = parse_args()
+	
+	device = 'cuda' if torch.cuda.is_available() else 'cpu'
+
+	train_loader, test_loader, class_names = cifar10.load_data(args.data_dir)
+	
+	model = get_model(args.model_name)
+	model = model.to(device)
+
+	criterion = nn.CrossEntropyLoss()
+	optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
+
+	for epoch in range(args.n_epoch):
+		train(model, device, train_loader, criterion, optimizer)
+		#test(epoch)
 
 
-parser = argparse.ArgumentParser(description='PyTorch CIFAR10 Training')
-parser.add_argument('--lr', default=0.1, type=float, help='learning rate')
-parser.add_argument('--resume', '-r', action='store_true', help='resume from checkpoint')
-args = parser.parse_args()
-
-device = 'cuda' if torch.cuda.is_available() else 'cpu'
-best_acc = 0  # best test accuracy
-start_epoch = 0  # start from epoch 0 or last checkpoint epoch
-
-# Data
-print('==> Preparing data..')
-transform_train = transforms.Compose([
-	transforms.RandomCrop(32, padding=4),
-	transforms.RandomHorizontalFlip(),
-	transforms.ToTensor(),
-	transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
-
-transform_test = transforms.Compose([
-	transforms.ToTensor(),
-	transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010)),
-])
-
-data_dir = 'D:/workspace/datasets/'
-
-trainset = torchvision.datasets.CIFAR10(root=data_dir, train=True, download=True, transform=transform_train)
-trainloader = torch.utils.data.DataLoader(trainset, batch_size=128, shuffle=True, num_workers=0)
-testset = torchvision.datasets.CIFAR10(root=data_dir, train=False, download=True, transform=transform_test)
-testloader = torch.utils.data.DataLoader(testset, batch_size=100, shuffle=False, num_workers=0)
-classes = ('plane', 'car', 'bird', 'cat', 'deer', 'dog', 'frog', 'horse', 'ship', 'truck')
-
-
-# Model
-print('==> Building model..')
-#net = VGG('VGG19')
-net = ResNet18()
-#net = PreActResNet18()
-#net = GoogLeNet()
-#net = DenseNet121()
-#net = ResNeXt29_2x64d()
-#net = MobileNet()
-#net = MobileNetV2()
-#net = DPN92()
-#net = ShuffleNetG2()
-#net = SENet18()
-#net = ShuffleNetV2(1)
-#net = EfficientNetB0()
-net = net.to(device)
-if device == 'cuda':
-	net = torch.nn.DataParallel(net)
-	cudnn.benchmark = True
-
-checkpoint_dir = '../../data/outputs/models/checkpoints/'
-os.makedirs(checkpoint_dir, exist_ok=True)
-"""
-if args.resume:
-	# Load checkpoint.
-	print('==> Resuming from checkpoint..')
-	assert os.path.isdir(checkpoint_dir), 'Error: no checkpoint directory found!'
-	checkpoint = torch.load(checkpoint_dir+'ckpt.pth')
-	net.load_state_dict(checkpoint['net'])
-	best_acc = checkpoint['acc']
-	start_epoch = checkpoint['epoch']
-"""
-
-criterion = nn.CrossEntropyLoss()
-optimizer = optim.SGD(net.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
+def get_model(model_name):
+	#model = VGG('VGG19')
+	if model_name == 'resnet18':
+		model = ResNet18()
+	else:
+		print('{} does NOT exist in repertory.'.format(model_name))
+		sys.exit(1)
+	#model = PreActResNet18()
+	#model = GoogLeNet()
+	#model = DenseNet121()
+	#model = ResNeXt29_2x64d()
+	#model = MobileNet()
+	#model = MobileNetV2()
+	#model = DPN92()
+	#model = ShuffleNetG2()
+	#model = SENet18()
+	#model = ShuffleNetV2(1)
+	#model = EfficientNetB0()
+	
+	return model
+	
 
 # Training
-def train(epoch):
-	print('\nEpoch: %d' % epoch)
-	net.train()
-	train_loss = 0
-	correct = 0
-	total = 0
-	for batch_idx, (inputs, targets) in enumerate(trainloader):
+def train(model, device, train_loader, criterion, optimizer):
+	model.train()
+
+	output_list = []
+	target_list = []
+	running_loss = 0.0
+	for batch_idx, (inputs, targets) in enumerate(train_loader):
+		# Forward processing.
 		inputs, targets = inputs.to(device), targets.to(device)
-		optimizer.zero_grad()
-		outputs = net(inputs)
+		outputs = model(inputs)
 		loss = criterion(outputs, targets)
+		
+		# Backward processing.
+		optimizer.zero_grad()
 		loss.backward()
 		optimizer.step()
 
-		train_loss += loss.item()
-		_, predicted = outputs.max(1)
-		total += targets.size(0)
-		correct += predicted.eq(targets).sum().item()
+		# Calculate score.
+		output_list += [int(o.argmax()) for o in outputs]
+		target_list += [int(t) for t in targets]
+		running_loss += loss.item()
+		train_acc, train_loss = calc_score(output_list, target_list, running_loss, train_loader)
+		if batch_idx % 10 == 0 and batch_idx != 0:
+			stdout_temp = 'batch: {:>3}/{:<3}, train acc: {:<8}, train loss: {:<8}'
+			print(stdout_temp.format(batch_idx, len(train_loader), train_acc, train_loss))
 
-		#progress_bar(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-		#	% (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
-		if batch_idx % 50 == 0:
-			print(batch_idx, len(trainloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)' % (train_loss/(batch_idx+1), 100.*correct/total, correct, total))
+	train_acc, train_loss = calc_score(output_list, target_list, running_loss, train_loader)
+
+	return train_acc, train_loss
+
+
+def calc_score(output_list, target_list, running_loss, data_loader):
+	# Calculate accuracy.
+	result = classification_report(output_list, target_list, output_dict=True)
+	acc = round(result['weighted avg']['f1-score'], 6)
+	loss = round(running_loss / len(data_loader.dataset), 6)
+
+	return acc, loss
+
 
 def test(epoch):
 	global best_acc
@@ -125,29 +113,41 @@ def test(epoch):
 			total += targets.size(0)
 			correct += predicted.eq(targets).sum().item()
 
-			#progress_bar(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)'
-			#	% (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
 			if batch_idx % 50 == 0:
 				print(batch_idx, len(testloader), 'Loss: %.3f | Acc: %.3f%% (%d/%d)' % (test_loss/(batch_idx+1), 100.*correct/total, correct, total))
-
 
 	# Save checkpoint.
 	acc = 100.*correct/total
 	if acc > best_acc:
 		print('Saving..')
-		"""
-		state = {
-			'net': net.state_dict(),
-			'acc': acc,
-			'epoch': epoch,
-		}
-		"""
-		if not os.path.isdir(checkpoint_dir):
-			os.mkdir(checkpoint_dir)
-		torch.save(net.state_dict(), checkpoint_dir+'ckpt_epoch_{}.pth'.format(epoch))
+		model_ckpt_path = args.model_ckpt_path_temp.format(args.dataset_name, args.model_name, 10)
+		torch.save(net.state_dict(), model_ckpt_path)
 		best_acc = acc
 
 
-for epoch in range(start_epoch, start_epoch+200):
-	train(epoch)
-	test(epoch)
+def parse_args():
+	arg_parser = argparse.ArgumentParser(description="Image Classification")
+	
+	arg_parser.add_argument("--dataset_name", type=str, default='cifar10')
+	arg_parser.add_argument("--data_dir", type=str, default='D:/workspace/datasets/')
+	arg_parser.add_argument("--model_name", type=str, default='resnet18')
+	arg_parser.add_argument("--model_ckpt_dir", type=str, default='../../experiments/models/checkpoints/')
+	arg_parser.add_argument("--model_ckpt_path_temp", type=str, default='../../experiments/models/checkpoints/{}_{}_epoch={}')
+	arg_parser.add_argument('--n_epoch', default=1, type=int, help='The number of epoch')
+	arg_parser.add_argument('--lr', default=0.1, type=float, help='Learning rate')
+	#arg_parser.add_argument("--model_path", type=str, default='../outputs/models/mnist_original_softmax_center_epoch_099.pth')
+
+	args = arg_parser.parse_args()
+
+	# Make directory.
+	os.makedirs(args.model_ckpt_dir, exist_ok=True)
+
+	# Validate paths.
+	os.path.exists(args.data_dir)
+	os.path.exists(args.model_ckpt_dir)
+
+	return args
+
+
+if __name__ == "__main__":
+	main()
