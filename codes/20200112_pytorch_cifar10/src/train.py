@@ -153,7 +153,8 @@ def parse_args():
 	arg_parser = argparse.ArgumentParser(description="Image Classification")
 	
 	arg_parser.add_argument("--dataset_name", type=str, default='CIFAR10')
-	arg_parser.add_argument("--data_dir", type=str, default='D:/workspace/datasets/')
+	#arg_parser.add_argument("--data_dir", type=str, default='D:/workspace/datasets/')
+	arg_parser.add_argument("--data_dir", type=str, default='../data/')
 	arg_parser.add_argument("--model_name", type=str, default='ResNet18')
 	arg_parser.add_argument("--model_ckpt_dir", type=str, default='../experiments/models/checkpoints/')
 	arg_parser.add_argument("--model_ckpt_path_temp", type=str, default='../experiments/models/checkpoints/{}_{}_epoch={}.pth')
@@ -163,6 +164,7 @@ def parse_args():
 	args = arg_parser.parse_args()
 
 	# Make directory.
+	os.makedirs(args.data_dir, exist_ok=True)
 	os.makedirs(args.model_ckpt_dir, exist_ok=True)
 
 	# Validate paths.

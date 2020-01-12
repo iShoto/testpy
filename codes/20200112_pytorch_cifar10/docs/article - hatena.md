@@ -1,4 +1,6 @@
-PyTorchのチュートリアルに従ってCIFAR10の画像分類ができるようになったのだが、
+CIFAR10の画像分類は
+[PyTorchのチュートリアル](https://pytorch.org/tutorials/beginner/blitz/cifar10_tutorial.html)
+に従ったらできるようになったのだが、
 オリジナルモデルだったためResNet18に変更しようとしたら少しつまづいた。
 再度つまづかないために、ここに実行手順をコード解説付きでまとめておく。
 なお全コードは

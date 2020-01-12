@@ -112,7 +112,8 @@ def parse_args():
 	# Set arguments.
 	arg_parser = argparse.ArgumentParser(description="Image Classification")
 	
-	arg_parser.add_argument("--data_dir", type=str, default='D:/workspace/datasets/')
+	#arg_parser.add_argument("--data_dir", type=str, default='D:/workspace/datasets/')
+	arg_parser.add_argument("--data_dir", type=str, default='../data/')
 	arg_parser.add_argument("--model_name", type=str, default='ResNet18')
 	arg_parser.add_argument("--model_path", type=str, default='../experiments/models/CIFAR10_ResNet18_epoch=10.pth')
 
