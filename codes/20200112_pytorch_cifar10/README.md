@@ -1,11 +1,9 @@
-# Metric Learning with MNIST
-This library is Metric learning using center loss for MNIST.
-
+# PyTorch + CIFAR10 + ResNet18
+This library makes a ResNet18 model classifing CIFAR10 with PyTorch.
 
 # Feature
-- Query and Gallery preparation from MNIST
-- Feature Extraction
-- Distance Caliculation with Cosine Similarity
+- Training and test ResNet18 classifing CIFAR10
+- Calculating training and test accurary and loss
 
 
 # Requirement
@@ -27,34 +25,23 @@ git clone https://github.com/iShoto/testpy.git
 # Usage
  
 ```sh
-$ cd testpy/codes/20200105_metric_learning_mnist_query_and_gallery/src/
-$ python python image_seach_query.py
-num query: 1, num gallery: 100
+$ cd testpy/codes/20200112_pytorch_cifar10/src/
+$ python train.py
+Files already downloaded and verified
+Files already downloaded and verified
+batch:  10/391, train acc: 0.176831, train loss: 0.000512
+batch:  20/391, train acc: 0.208884, train loss: 0.000931
+batch:  30/391, train acc: 0.214069, train loss: 0.001356
+...
+batch: 390/391, train acc: 0.424302, train loss: 0.012254
+epoch:   1, train acc: 0.424302, train loss: 0.012254, test acc: 0.539407, test loss: 0.012638
+Saved a model checkpoint at ../experiments/models/checkpoints/CIFAR10_ResNet18_epoch=1.pth
 
-Query Image Label: 9
-
-Search Result
-        dist                      img_path  label
-0   0.005382  ../inputs/gallery/9_1801.png      9
-1   0.018921  ../inputs/gallery/9_4237.png      9
-2   0.036690   ../inputs/gallery/9_481.png      9
-3   0.047976  ../inputs/gallery/9_7380.png      9
-4   0.069177  ../inputs/gallery/9_8213.png      9
-5   0.076138  ../inputs/gallery/9_3970.png      9
-6   0.078646  ../inputs/gallery/9_2685.png      9
-7   0.107746  ../inputs/gallery/9_5977.png      9
-8   0.387746  ../inputs/gallery/9_4505.png      9
-9   0.523175  ../inputs/gallery/3_8981.png      3
-10  0.538863   ../inputs/gallery/3_927.png      3
-11  0.560314   ../inputs/gallery/3_142.png      3
-12  0.565455  ../inputs/gallery/3_8451.png      3
-13  0.582634  ../inputs/gallery/3_4755.png      3
-14  0.586750  ../inputs/gallery/3_2174.png      3
-15  0.589938  ../inputs/gallery/3_9986.png      3
-16  0.675965  ../inputs/gallery/1_4491.png      1
-17  0.682165  ../inputs/gallery/3_8508.png      3
-18  0.683414  ../inputs/gallery/3_4785.png      3
-19  0.698637  ../inputs/gallery/1_1038.png      1
+$ python test.py
+Files already downloaded and verified
+Files already downloaded and verified
+Loaded a model from ../experiments/models/CIFAR10_ResNet18_epoch=10.pth
+test acc: 0.779172, test loss: 0.006796
 ```
 
 

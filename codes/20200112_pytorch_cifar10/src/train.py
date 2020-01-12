@@ -11,8 +11,8 @@ import os
 import argparse
 from sklearn.metrics import classification_report
 
-from models import *
 from datasets import cifar10
+from models import *
 
 def main():
 	# Parse arguments.
