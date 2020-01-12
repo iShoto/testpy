@@ -109,6 +109,8 @@ codes/20200105_metric_learning_mnist_query_and_gallery/inputs/
 codes/20200105_metric_learning_mnist_query_and_gallery/outputs/
 codes/20200106_metric_learning_cifar10/inputs/
 codes/20200106_metric_learning_cifar10/outputs/
+codes/20200112_pytorch_cifar10/experiments/
+codes/20200112_pytorch_cifar10/src/pytorch-cifar/
 *pth
 
 
