@@ -13,8 +13,10 @@ from sklearn.metrics import classification_report
 
 from datasets import cifar10
 import metrics
+#import resnet
 #from models import *
 from models.resnet_ex import ResNet18
+from models.mobilenetv2_ex import MobileNetV2
 
 
 def main():
@@ -28,18 +30,19 @@ def main():
 	train_loader, test_loader, class_names = cifar10.load_data(args.data_dir)
 	
 	# Set a model.
+	#model = resnet.resnet18()
 	model = get_model(args.model_name, args.n_feats)
 	model = model.to(device)
 	print(model)
+
 
 	#easy_margin = False
 	metric_fc = metrics.ArcMarginProduct(args.n_feats, len(class_names), s=30, m=0.5, easy_margin=False)
 	metric_fc.to(device)
 
 	# Set loss function and optimization function.
-	#criterion = nn.CrossEntropyLoss()
-	#optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
 	criterion = nn.CrossEntropyLoss()
+	ptimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
 	optimizer = optim.SGD([{'params': model.parameters()}, {'params': metric_fc.parameters()}],
 						  lr=args.lr, 
 						  weight_decay=args.weight_decay)
@@ -70,16 +73,10 @@ def train(device, train_loader, model, metric_fc, criterion, optimizer):
 	for batch_idx, (inputs, targets) in enumerate(train_loader):
 		# Forward processing.
 		inputs, targets = inputs.to(device), targets.to(device).long()
-		print(inputs.shape)
 		features = model(inputs)
 		outputs = metric_fc(features, targets)
 		loss = criterion(outputs, targets)
-		#print(features)
-		#print(outputs)
 		
-		if batch_idx > 1:
-			1/0
-
 		# Backward processing.
 		optimizer.zero_grad()
 		loss.backward()
@@ -90,14 +87,20 @@ def train(device, train_loader, model, metric_fc, criterion, optimizer):
 		target_list += [int(t) for t in targets]
 		running_loss += loss.item()
 
+		#print(output_list)
+		#print(target_list)
+
+		#if batch_idx >= 1:
+		#	1/0
+
 		# Calculate score at present.
 		train_acc, train_loss = calc_score(output_list, target_list, running_loss, train_loader)
-		if batch_idx % 10 == 0 and batch_idx != 0:
+		if (batch_idx % 10 == 0 and batch_idx != 0) or (batch_idx == len(train_loader)):
 			stdout_temp = 'batch: {:>3}/{:<3}, train acc: {:<8}, train loss: {:<8}'
+			#print(output_list[-20:])
+			#print(target_list[-20:])
 			print(stdout_temp.format(batch_idx, len(train_loader), train_acc, train_loss))
-			1/0
-
-
+			
 	# Calculate score.
 	train_acc, train_loss = calc_score(output_list, target_list, running_loss, train_loader)
 
@@ -113,7 +116,10 @@ def test(device, test_loader, model, metric_fc, criterion):
 	for batch_idx, (inputs, targets) in enumerate(test_loader):
 		# Forward processing.
 		inputs, targets = inputs.to(device), targets.to(device)
-		outputs = model(inputs)
+		#outputs = model(inputs)
+		#loss = criterion(outputs, targets)
+		features = model(inputs)
+		outputs = metric_fc(features, targets)
 		loss = criterion(outputs, targets)
 		
 		# Set data to calculate score.
@@ -142,7 +148,7 @@ def get_model(model_name, n_feats):
 	elif model_name == 'MobileNet':
 		model = MobileNet()
 	elif model_name == 'MobileNetV2':
-		model = MobileNetV2()
+		model = MobileNetV2(n_feats)
 	elif model_name == 'DPN92':
 		model = DPN92()
 	elif model_name == 'ShuffleNetG2':
@@ -177,11 +183,13 @@ def parse_args():
 	arg_parser.add_argument("--data_dir", type=str, default='D:/workspace/datasets/')
 	#arg_parser.add_argument("--data_dir", type=str, default='../data/')
 	arg_parser.add_argument("--model_name", type=str, default='ResNet18')
+	#arg_parser.add_argument("--model_name", type=str, default='MobileNetV2')
 	arg_parser.add_argument("--model_ckpt_dir", type=str, default='../experiments/models/checkpoints/')
 	arg_parser.add_argument("--model_ckpt_path_temp", type=str, default='../experiments/models/checkpoints/{}_{}_epoch={}.pth')
 	arg_parser.add_argument('--n_epoch', default=1, type=int, help='The number of epoch')
-	arg_parser.add_argument('--lr', default=0.1, type=float, help='Learning rate')
-	arg_parser.add_argument('--n_feats', default=1, type=int, help='The number of base model output')
+	arg_parser.add_argument('--lr', default=0.001, type=float, help='Learning rate')
+	arg_parser.add_argument('--n_feats', default=512, type=int, help='The number of base model output')
+	#arg_parser.add_argument('--n_feats', default=1280, type=int, help='The number of base model output')
 	arg_parser.add_argument('--easy_margin', default=0, type=int, help='0 is False, 1 is True')
 	arg_parser.add_argument('--weight_decay', default=5e-4, type=float, help='')
 	#easy_margin = False

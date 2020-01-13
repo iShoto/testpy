@@ -77,13 +77,15 @@ class ResNet(nn.Module):
 		self.layer4 = self._make_layer(block, 512, num_blocks[3], stride=2)
 		self.linear = nn.Linear(512*block.expansion, num_classes)
 		
+		"""
 		for m in self.modules():
 			if isinstance(m, nn.Conv2d):
 				nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
 			elif isinstance(m, nn.BatchNorm2d):
 				nn.init.constant_(m.weight, 1)
 				nn.init.constant_(m.bias, 0)
-
+		"""
+		
 	def _make_layer(self, block, planes, num_blocks, stride):
 		strides = [stride] + [1]*(num_blocks-1)
 		layers = []
@@ -93,17 +95,20 @@ class ResNet(nn.Module):
 		return nn.Sequential(*layers)
 
 	def forward(self, x):
-		out = F.relu(self.bn1(self.conv1(x)))
-		out = self.layer1(out)
-		out = self.layer2(out)
-		out = self.layer3(out)
-		out = self.layer4(out)
-		out = F.avg_pool2d(out, 4)
-		out = out.view(out.size(0), -1)
-		out = self.linear(out)
-		#out = self.bn5(out)
-
-		return out
+		#x = F.relu(self.bn1(self.conv1(x)))
+		x = self.conv1(x)
+		x = self.bn1(x)
+		x = F.relu(x)
+		
+		x = self.layer1(x)
+		x = self.layer2(x)
+		x = self.layer3(x)
+		x = self.layer4(x)
+		x = F.avg_pool2d(x, 4)
+		x = x.view(x.size(0), -1)
+		x = self.linear(x)
+		
+		return x
 
 
 def ResNet18(n_feats):
