@@ -13,11 +13,7 @@ from sklearn.metrics import classification_report
 
 from datasets import cifar10
 import metrics
-#import resnet
-#from models import *
-#from models.resnet_ex import ResNet18
 from models.resnet import ResNet18, ResNetFace18
-#from models.mobilenetv2_ex import MobileNetV2
 
 
 def main():
@@ -35,21 +31,21 @@ def main():
 	model = model.to(device)
 	print(model)
 
-	metric_fc = metrics.ArcMarginProduct(args.n_feats, len(class_names), s=args.norm, m=args.margin, easy_margin=args.easy_margin)
-	metric_fc.to(device)
+	# Set a metric
+	metric = metrics.ArcMarginProduct(args.n_feats, len(class_names), s=args.norm, m=args.margin, easy_margin=args.easy_margin)
+	metric.to(device)
 
 	# Set loss function and optimization function.
 	criterion = nn.CrossEntropyLoss()
-	#optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
-	optimizer = optim.SGD([{'params': model.parameters()}, {'params': metric_fc.parameters()}],
+	optimizer = optim.SGD([{'params': model.parameters()}, {'params': metric.parameters()}],
 						  lr=args.lr, 
 						  weight_decay=args.weight_decay)
 
 	# Train and test.
 	for epoch in range(args.n_epoch):
 		# Train and test a model.
-		train_acc, train_loss = train(device, train_loader, model, metric_fc, criterion, optimizer)
-		test_acc, test_loss = test(device, test_loader, model, metric_fc, criterion)
+		train_acc, train_loss = train(device, train_loader, model, metric, criterion, optimizer)
+		test_acc, test_loss = test(device, test_loader, model, metric, criterion)
 		
 		# Output score.
 		stdout_temp = 'epoch: {:>3}, train acc: {:<8}, train loss: {:<8}, test acc: {:<8}, test loss: {:<8}'
@@ -71,8 +67,6 @@ def train(device, train_loader, model, metric_fc, criterion, optimizer):
 	for batch_idx, (inputs, targets) in enumerate(train_loader):
 		# Forward processing.
 		inputs, targets = inputs.to(device), targets.to(device).long()
-		#outputs = model(inputs)
-		#loss = criterion(outputs, targets)
 		features = model(inputs)
 		outputs = metric_fc(features, targets)
 		loss = criterion(outputs, targets)
@@ -108,8 +102,6 @@ def test(device, test_loader, model, metric_fc, criterion):
 	for batch_idx, (inputs, targets) in enumerate(test_loader):
 		# Forward processing.
 		inputs, targets = inputs.to(device), targets.to(device)
-		#outputs = model(inputs)
-		#loss = criterion(outputs, targets)
 		features = model(inputs)
 		outputs = metric_fc(features, targets)
 		loss = criterion(outputs, targets)
@@ -185,9 +177,7 @@ def parse_args():
 	arg_parser.add_argument('--n_feats', default=512, type=int, help='The number of base model output')
 	arg_parser.add_argument('--easy_margin', default=1, type=int, help='0 is False, 1 is True')
 	arg_parser.add_argument('--weight_decay', default=5e-4, type=float, help='')
-	#arg_parser.add_argument('--norm', default=30, type=int, help='ArcFace: norm of input feature')
 	arg_parser.add_argument('--norm', default=30, type=int, help='ArcFace: norm of input feature')
-	#arg_parser.add_argument('--margin', default=0.5, type=float, help='ArcFace: margin')
 	arg_parser.add_argument('--margin', default=0.5, type=float, help='ArcFace: margin')
 		
 	args = arg_parser.parse_args()
