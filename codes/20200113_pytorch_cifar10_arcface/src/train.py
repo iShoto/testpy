@@ -27,7 +27,7 @@ def main():
 	train_loader, test_loader, class_names = cifar10.load_data(args.data_dir)
 	
 	# Set a model.
-	model = get_model(args.model_name, args.n_feats)
+	model = get_model(args.model_name)
 	model = model.to(device)
 	print(model)
 
@@ -116,13 +116,13 @@ def test(device, test_loader, model, metric_fc, criterion):
 	return test_acc, test_loss
 
 
-def get_model(model_name, n_feats):
+def get_model(model_name):
 	if model_name == 'VGG19':
 		model = VGG('VGG19')
 	elif model_name == 'ResNet18':
 		model = ResNet18()
 	elif model_name == 'ResNetFace18':
-		model = ResNetFace18(n_feats)
+		model = ResNetFace18()
 	elif model_name == 'PreActResNet18':
 		model = PreActResNet18()
 	elif model_name == 'GoogLeNet':
@@ -172,7 +172,7 @@ def parse_args():
 	arg_parser.add_argument("--model_name", type=str, default='ResNetFace18')
 	arg_parser.add_argument("--model_ckpt_dir", type=str, default='../experiments/models/checkpoints/')
 	arg_parser.add_argument("--model_ckpt_path_temp", type=str, default='../experiments/models/checkpoints/{}_{}_epoch={}.pth')
-	arg_parser.add_argument('--n_epoch', default=100, type=int, help='The number of epoch')
+	arg_parser.add_argument('--n_epoch', default=1, type=int, help='The number of epoch')
 	arg_parser.add_argument('--lr', default=0.001, type=float, help='Learning rate')
 	arg_parser.add_argument('--n_feats', default=512, type=int, help='The number of base model output')
 	arg_parser.add_argument('--easy_margin', default=1, type=int, help='0 is False, 1 is True')

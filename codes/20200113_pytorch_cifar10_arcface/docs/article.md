@@ -25,8 +25,6 @@
 
 ## 概要
 
-
-
 実行手順は次の通り。
 
 1. データの取得
@@ -36,7 +34,7 @@
 5. 学習と検証
 
 「3. 距離損失関数の定義」が今回新たに実装された部分である。
-これらはmain()で次のように実行される。
+上記の手順はmain()で次のように実行される。
 
 ```python
 def main():
@@ -50,7 +48,7 @@ def main():
 	train_loader, test_loader, class_names = cifar10.load_data(args.data_dir)
 	
 	# Set a model.
-	model = get_model(args.model_name, args.n_feats)
+	model = get_model(args.model_name)
 	model = model.to(device)
 	print(model)
 
@@ -82,11 +80,88 @@ def main():
 ```
 
 
-## 画像分類モデル
+## 2. モデルの定義
+
+画像分類モデルは`get_model()`内で呼び出している。
+この時、モデル名を引数として渡す。
 
 
 ```python
-model = get_model(args.model_name, args.n_feats)
+model = get_model(args.model_name)
+```
+
+今回はResNet18を使うが、ArcFaceに入力する特徴を取得するために、
+ResNetFace18というメソッドを作った。
+
+```python
+from models.resnet import ResNet18, ResNetFace18
+
+def get_model(model_name):
+	...
+	elif model_name == 'ResNetFace18':
+		model = ResNetFace18()
+```
+
+呼び出しているのは、`model`ディレクトリーの`resnet.py`。
+以下が中身。
+やってることは最終層をコメントアウトしただけ。
+これで512次元の特徴が取得できる。
+
+```python
+def ResNetFace18(n_feats):
+	return ResNetFace(BasicBlock, [2,2,2,2], num_classes=n_feats)
+
+
+class ResNetFace(nn.Module):
+	def __init__(self, block, num_blocks, num_classes=10):
+		super(ResNetFace, self).__init__()
+		self.in_planes = 64
+
+		self.conv1 = nn.Conv2d(3, 64, kernel_size=3, stride=1, padding=1, bias=False)
+		self.bn1 = nn.BatchNorm2d(64)
+		self.layer1 = self._make_layer(block, 64, num_blocks[0], stride=1)
+		self.layer2 = self._make_layer(block, 128, num_blocks[1], stride=2)
+		self.layer3 = self._make_layer(block, 256, num_blocks[2], stride=2)
+		self.layer4 = self._make_layer(block, 512, num_blocks[3], stride=2)
+		#self.linear = nn.Linear(512*block.expansion, num_classes)
+
+	def _make_layer(self, block, planes, num_blocks, stride):
+		strides = [stride] + [1]*(num_blocks-1)
+		layers = []
+		for stride in strides:
+			layers.append(block(self.in_planes, planes, stride))
+			self.in_planes = planes * block.expansion
+		return nn.Sequential(*layers)
+
+	def forward(self, x):
+		out = F.relu(self.bn1(self.conv1(x)))
+		out = self.layer1(out)
+		out = self.layer2(out)
+		out = self.layer3(out)
+		out = self.layer4(out)
+		out = F.avg_pool2d(out, 4)
+		out = out.view(out.size(0), -1)
+		#out = self.linear(out)
+		return out
+```
+
+
+## 3. 距離損失関数の定義
+距離損失関数という言葉が正しいか不明だが、
+同じクラスを近くに、異なるクラスを遠くに置くようにするための損失関数を指す。
+ArcFaceは、簡単にいうと下図のように円弧上（実際には超球面上）にクラスが適切に分布するように角度を学習する損失関数となる。
+
+![pic](./images/arcface_fig3.PNG)
+
+
+```python
+metric = metrics.ArcMarginProduct(args.n_feats, len(class_names), s=args.norm, m=args.margin, easy_margin=args.easy_margin)
+```
+
+
+```bash
+epoch: 100, train acc: 0.955092, train loss: 0.004396, test acc: 0.847445, test loss: 0.028565
+Saved a model checkpoint at ../experiments/models/checkpoints/CIFAR10_ResNetFace18_epoch=100.pth
 ```
 
 
