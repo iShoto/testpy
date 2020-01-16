@@ -1,8 +1,3 @@
-https://github.com/ronghuaiyang/arcface-pytorch
-
-https://github.com/ronghuaiyang/arcface-pytorch/blob/master/models/resnet.py
-
-https://github.com/ronghuaiyang/arcface-pytorch/blob/master/models/metrics.py
 
 
 # ResNet18でCIFAR10を距離学習
@@ -93,3 +88,11 @@ def main():
 ```python
 model = get_model(args.model_name, args.n_feats)
 ```
+
+
+## 参考文献
+https://github.com/ronghuaiyang/arcface-pytorch
+
+https://github.com/ronghuaiyang/arcface-pytorch/blob/master/models/resnet.py
+
+https://github.com/ronghuaiyang/arcface-pytorch/blob/master/models/metrics.py
