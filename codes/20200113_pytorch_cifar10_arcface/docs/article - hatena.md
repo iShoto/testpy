@@ -1,22 +1,18 @@
-
-
-# ResNet18でCIFAR10を距離学習
-
 以前、「[簡易モデルでMNISTを距離学習](http://testpy.hatenablog.com/entry/2020/01/12/171347)」と
 「[ResNet18でCIFAR10を画像分類](http://testpy.hatenablog.com/entry/2020/01/04/225231)」
 を実施した。
-今回はこれらを組み合わせた「ResNet18でCIFAR10を距離学習」を行った。
+今回はこれらを組み合わせて「ResNet18でCIFAR10を距離学習」を行った。
 
 基本的には「[ResNet18でCIFAR10を画像分類](http://testpy.hatenablog.com/entry/2020/01/04/225231)」
 で実施した内容と同じになる。
-異なるのはResNet18の最終層の前で特徴抽出して、それを距離損失関数に通してから、損失関数に入力している点である。
-なので、全体の説明は「[ResNet18でCIFAR10を画像分類](http://testpy.hatenablog.com/entry/2020/01/04/225231)」
-に譲るとして、ここでは距離損失関数の周辺の実装について説明する。
-なお、今回利用する距離損失関数は[ArcFace](https://arxiv.org/abs/1801.07698)で、上記で述べたように画像分類モデルに付け足すだけの優れものである。
+異なるのはResNet18の最終層の前で特徴抽出して、それをメトリックに通してから、損失関数に入力している点である。
+なので、コード全体の説明は「[ResNet18でCIFAR10を画像分類](http://testpy.hatenablog.com/entry/2020/01/04/225231)」
+に譲るとして、ここではメトリックの周辺の実装について説明する。
+なお、今回利用するメトリックは[ArcFace](https://arxiv.org/abs/1801.07698)で、上記で述べたように画像分類モデルに付け足すだけの優れものである。
 しかも非常に精度が高い。
 なぜ精度が高くなるのかは
 「[モダンな深層距離学習 (deep metric learning) 手法: SphereFace, CosFace, ArcFace - Qiita](https://qiita.com/yu4u/items/078054dfb5592cbb80cc)」
-が詳しいので、ArcFaceを利用したい人は一読することをお薦めする。
+が詳しいので一読することをお薦めする。
 
 なお、今回説明するコードは
 [ここ](https://github.com/iShoto/testpy/tree/master/codes/20200113_pytorch_cifar10_arcface)
@@ -48,7 +44,7 @@ def main():
 	train_loader, test_loader, class_names = cifar10.load_data(args.data_dir)
 	
 	# Set a model.
-	model = get_model(args.model_name)
+	model = get_model(args.model_name, args.n_feats)
 	model = model.to(device)
 	print(model)
 
@@ -92,7 +88,7 @@ torchvisionからCIFAR10を取得。
 
 画像分類モデルは`get_model()`内で呼び出している。
 この時、モデル名と出力する特徴数を引数として渡す。
-後者は今回は512にしている。
+今回、後者は512にしている。
 
 
 ```python
@@ -159,7 +155,7 @@ class ResNetFace(nn.Module):
 同じクラスを近くに、異なるクラスを遠くに置くようにするための損失関数を指す。
 ArcFaceは、簡単にいうと下図のように円弧上（実際には超球面上）にクラスが適切に分布するように角度を学習する損失関数となる。
 
-![pic](./images/arcface_fig3.PNG)
+[f:id:Shoto:20200118113944p:plain]
 
 コードは
 [これ](https://github.com/ronghuaiyang/arcface-pytorch/blob/master/models/metrics.py)
@@ -171,14 +167,17 @@ metric = metrics.ArcMarginProduct(args.n_feats, len(class_names), s=args.norm, m
 ```
 
 第1引数の`args.n_feats`は入力する特徴数。
-これはモデルの出力数でもあった。
+これはモデルの出力数でもある。
 第2引数の`len(class_names)`はクラス数。
 `s`は下図のLogit前のFeature Re-scaleに当たる。
 Logitの値がsoftmaxで機能するよう適切な値にスケールする。
-`m`はマージンで、
-クラスの重み$W_{y_i}$と画像の特徴ベクトル$x_i$のなす角度$\theta_{y_i}$を最小化するのだが、その際$m$をペナルティーとして加えることで、同じクラスを近くに、異なるクラスを遠くに置くようにする効果が増す。
+`m`はAdditive Anguler Mergin Penaltyにあたる。
+つまりマージンによるペナルティーで、
+クラスの重み[tex:W\_{y_i}]と画像の特徴ベクトル[tex:x_i]のなす角度[tex:\theta _{y_i}]を最小化するのだが、
+その際マージン[tex:m]をペナルティーとして加えることで、同じクラスを近くに、異なるクラスを遠くに置くようにするための効果が増す。
 
-![pic](./images/arcface_fig2.PNG)
+[f:id:Shoto:20200118114003p:plain]
+
 
 `easy_margin`は以下のような処理を行っているが、理解しきれなかったので暇ができたら後で調べる。
 ちなみに`easy_margin`は`True`にしないと全然学習しなかったので注意。
@@ -190,14 +189,13 @@ if self.easy_margin:
 		phi = torch.where(cosine > self.th, phi, cosine - self.mm)
 ```
 
-モデルが出力した特徴をArcFaceに通したあと`CrossEntropyLoss`にかけるが、
-`Softmax`は`criterion`に指定した`CrossEntropyLoss`に内包されている。
+図では`Softmax`にかけたあと、`CrossEntropyLoss`を算出している。
+PyTorchでは`criterion`に指定した`CrossEntropyLoss`に`Softmax`も内包されているため、
+特に記述する必要がない。
 
 ```python
 criterion = nn.CrossEntropyLoss()
-```
 
-```python
 features = model(inputs)
 outputs = metric_fc(features, targets)
 loss = criterion(outputs, targets)
@@ -217,12 +215,11 @@ optimizer = optim.SGD([{'params': model.parameters()}, {'params': metric.paramet
 
 ## 5. 学習と検証
 
-画像分類と同様に訓練を実施した結果。
+画像分類と同様に訓練を実施した結果、
 100エポックでテスト精度が82.4%になった。
 
 ```bash
 epoch: 100, train acc: 0.947966, train loss: 0.003992, test acc: 0.824237, test loss: 0.027159
-Saved a model checkpoint at ../experiments/models/checkpoints/CIFAR10_ResNetFace18_epoch=100.pth
 ```
 
 ちなみにResNet18の最終層をコメントアウトしても512次元の特徴が取れるのだが、
@@ -244,12 +241,11 @@ def forward(self, x):
 
 ```bash
 epoch: 100, train acc: 0.955092, train loss: 0.004396, test acc: 0.847445, test loss: 0.028565
-Saved a model checkpoint at ../experiments/models/checkpoints/CIFAR10_ResNetFace18_epoch=100.pth
 ```
 
 
 ## 所感
-中身があまり理解できていないのと、モデルとメトリックのパラメーター調整が必要な気がしている。
+中身が完全に理解できていないのと、モデルとメトリックのパラメーター調整がもっと必要な気がしている。
 時間があったら、もっと突っ込んでやりたい。
 
 
@@ -258,5 +254,3 @@ Saved a model checkpoint at ../experiments/models/checkpoints/CIFAR10_ResNetFace
 - [ronghuaiyang/arcface-pytorch - github](https://github.com/ronghuaiyang/arcface-pytorch)
 - [モダンな深層距離学習 (deep metric learning) 手法: SphereFace, CosFace, ArcFace - Qiita](https://qiita.com/yu4u/items/078054dfb5592cbb80cc)
 - [PyTorch (4) Logistic Regression - 人工知能に関する断創録](http://aidiary.hatenablog.com/entry/20180203/1517629555)
-
-

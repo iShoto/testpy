@@ -12,7 +12,6 @@ import os
 import argparse
 
 
-
 def load_data(data_dir):
 	transform_train = transforms.Compose([
 		transforms.RandomCrop(32, padding=4),
