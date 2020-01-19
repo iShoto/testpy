@@ -113,6 +113,7 @@ codes/20200112_pytorch_cifar10/experiments/
 codes/20200112_pytorch_cifar10/src/pytorch-cifar/
 codes/20200113_pytorch_cifar10_arcface/src/old/
 codes/20200119_pytorch_object_detection/src/vision/
+codes/20200119_pytorch_object_detection/src/cocoapi/
 *pth
 
 
