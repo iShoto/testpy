@@ -50,8 +50,11 @@ def main():
 		print('')
 
 
-def train(model, optimizer, train_data_loader, device, epoch, print_freq=10):
+def train(model, optimizer, train_data_loader, device, print_freq=10):
 	model.train()
+
+
+	"""
 	header = 'Epoch: [{}]'.format(epoch)
 
 	lr_scheduler = None
@@ -89,6 +92,7 @@ def train(model, optimizer, train_data_loader, device, epoch, print_freq=10):
 
 		metric_logger.update(loss=losses_reduced, **loss_dict_reduced)
 		metric_logger.update(lr=optimizer.param_groups[0]["lr"])
+	"""
 
 
 def parse_args():
