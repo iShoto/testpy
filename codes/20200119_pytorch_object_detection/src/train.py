@@ -18,6 +18,10 @@ import engine, utils
 
 def main():
 	args = parse_args()
+
+	penn_fudan_ped.make_csv(args.data_dir, args.anno_path)
+
+	1/0
 	device = 'cuda' if torch.cuda.is_available() else 'cpu'
 	
 	num_classes = 2
@@ -97,11 +101,13 @@ def train(model, optimizer, train_data_loader, device, print_freq=10):
 
 def parse_args():
 	# Set arguments.
-	arg_parser = argparse.ArgumentParser(description="Image Classification")
+	arg_parser = argparse.ArgumentParser()
 	
 	# Dataset
 	arg_parser.add_argument("--dataset_name", default='PennFudanPed')
 	arg_parser.add_argument("--data_dir", default='D:/workspace/datasets/PennFudanPed/')
+	arg_parser.add_argument('--anno_dir', default='../experiments/annos/')
+	arg_parser.add_argument('--anno_path', default='../experiments/annos/anno_penn-fudan-ped.csv')
 
 	# Model
 	arg_parser.add_argument("--model_name", default='FasterRCNN-ResNet50')
@@ -111,10 +117,12 @@ def parse_args():
 	args = arg_parser.parse_args()
 
 	# Make directory.
+	os.makedirs(args.anno_dir, exist_ok=True)
 	os.makedirs(args.model_ckpt_dir, exist_ok=True)
 
 	# Validate paths.
 	assert os.path.exists(args.data_dir)
+	assert os.path.exists(args.anno_dir)
 	assert os.path.exists(args.model_ckpt_dir)
 
 	return args
