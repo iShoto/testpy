@@ -19,14 +19,14 @@ import engine, utils
 def main():
 	args = parse_args()
 
-	penn_fudan_ped.make_csv(args.data_dir, args.anno_path)
-
-	1/0
 	device = 'cuda' if torch.cuda.is_available() else 'cpu'
 	
-	num_classes = 2
-	train_data_loader, test_data_loader = penn_fudan_ped.get_dataset(args.data_dir)
+	if not os.path.exists(args.anno_path):
+		penn_fudan_ped.make_csv(args.data_dir, args.anno_path)
+	train_data_loader, test_data_loader = penn_fudan_ped.get_dataset(args.anno_path)
 
+	print('Loading a model...')
+	num_classes = 2
 	#model = models.get_maskrcnn_resnet50(num_classes)
 	model = models.get_fasterrcnn_resnet50(num_classes)
 	model.to(device)
