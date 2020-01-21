@@ -98,13 +98,13 @@ def parse_args():
 	arg_parser.add_argument("--model_name", default='FasterRCNN-ResNet50')
 	arg_parser.add_argument("--model_weight_path", default='../experiments/models/checkpoints/PennFudanPed_FasterRCNN-ResNet50_epoch=1.pth')
 	
-	# Others 
-	arg_parser.add_argument('--score_thresh', default=0.75, type=float)
-	
 	# Results
 	arg_parser.add_argument('--visual_img_dir', default='../experiments/results/visual_images/')
 	arg_parser.add_argument('--visual_img_half', default=1, type=int, help='0 is False, 1 is True.')
 
+	# Others 
+	arg_parser.add_argument('--score_thresh', default=0.75, type=float)
+	
 	args = arg_parser.parse_args()
 
 	# Make directories.
