@@ -38,8 +38,7 @@ def main():
 	lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=3, gamma=0.1)
 
 	# let's train it for 10 epochs
-	num_epochs = 1
-	for epoch in range(num_epochs):
+	for epoch in range(args.n_epoch):
 		# train for one epoch, printing every 10 iterations
 		engine.train_one_epoch(model, optimizer, train_data_loader, device, epoch, print_freq=10)
 		# update the learning rate
@@ -113,6 +112,9 @@ def parse_args():
 	arg_parser.add_argument("--model_name", default='FasterRCNN-ResNet50')
 	arg_parser.add_argument("--model_ckpt_dir", default='../experiments/models/checkpoints/')
 	arg_parser.add_argument("--model_ckpt_path_temp", default='../experiments/models/checkpoints/{}_{}_epoch={}.pth')
+
+	# Others
+	arg_parser.add_argument("--n_epoch", default=1, type=int)
 		
 	args = arg_parser.parse_args()
 
