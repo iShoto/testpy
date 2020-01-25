@@ -1,4 +1,4 @@
-# Visualize Object Detection Annotation data.
+# Visualize Object Detection Annotation data
 Visualizing annotation data for object detection using OpenCV.
 
 

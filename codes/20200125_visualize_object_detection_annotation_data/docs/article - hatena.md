@@ -3,7 +3,7 @@
 今回はアノテーションデータを描画しているが、検出結果でもコードはほぼ同じ。
 物体の色はcolormapによって自動選択できるようにしている。
 なお、ここで説明するコードは
-[ここ](https://github.com/iShoto/testpy/tree/master/codes/20200125_visualize_annotation)
+[ここ](https://github.com/iShoto/testpy/tree/master/codes/20200125_visualize_object_detection_annotation_data)
 に置いてある。
 
 [f:id:Shoto:20200125120158j:plain]
@@ -161,7 +161,7 @@ for i in range(15):
 `get_colormap()`の中で
 `rgb = [int(d) for d in np.array(cmap(float(i)/len(label_names)))*255][:3]`
 という長い1行があるが、次のような処理を行っている。
-簡単に言うと、ラベルごとのRGBを取得している。
+簡単に言うと、RGBを適切な値に変換している。
 
 ```sh
 >>> i = 0
@@ -180,3 +180,15 @@ for i in range(15):
 >>> print(label_names[i], tuple(rgb))
 bird (255, 0, 40)
 ```
+
+
+## まとめ
+普段はcolormapを使ってなかったのだが、まとめるにあたり使ってみた。
+色々試したが、発色やバランス的に`gist_rainbow`が良かったので採用している。
+また参照しに見にくると思う。
+
+
+## 参考文献
+- [OpenCVの描画機能 - OpenCV-Python Tutorials](http://labs.eecs.tottori-u.ac.jp/sd/Member/oyamada/OpenCV/html/py_tutorials/py_gui/py_drawing_functions/py_drawing_functions.html)
+- [描画関数 - opencv 2.2 documentation](http://opencv.jp/opencv-2svn/cpp/drawing_functions.html)
+- [color example code - matplotlib](https://matplotlib.org/examples/color/colormaps_reference.html)
