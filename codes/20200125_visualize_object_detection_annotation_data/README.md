@@ -1,11 +1,13 @@
-# Metric Learning with MNIST
-This library is Metric learning using center loss for MNIST.
+# Visualize Object Detection Annotation data.
+This code visualize annotation data for object detection using OpenCV.
 
 
 # Feature
-- Query and Gallery preparation from MNIST
-- Feature Extraction
-- Distance Caliculation with Cosine Similarity
+- General process to draw annotation data for object detection
+- Automatic selection of color per object using colormap
+
+
+# Requirement
 
 
 # Requirement
