@@ -1,11 +1,9 @@
-# バウンディングボックスの描画とcolormapによる自動色付け
-
 バウンディングボックスを描画する度に、同じようなコードを何度も書いているので、
 いい加減コピペで済むようにしたいと思ったので、ここにまとめておく。
 今回はアノテーションデータを描画しているが、検出結果でもコードはほぼ同じ。
 物体の色はcolormapによって自動選択できるようにしている。
 
-![pic](./images/2007_006490.jpg)
+[f:id:Shoto:20200125120158j:plain]
 
 ## 概要
 
@@ -121,7 +119,7 @@ def get_colormap(label_names, colormap_name):
 から文字列を選択する。
 例えば、`gist_rainbow`は以下のようになる。
 
-![pic](./images/gist_rainbow.PNG)
+[f:id:Shoto:20200125120215p:plain]
 
 `plt.get_cmap(colormap_name)`でカラーマップ`cmap`が取得できる。
 `cmap`に0～1の値を入れると特定の色が取得できる。

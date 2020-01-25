@@ -7,52 +7,48 @@ import numpy as np
 
 def main():
 	args = parse_args()
-	#img_path = '../data/images/2007_006490.jpg'
-	#anno_path = '../data/annos/anno_voc.csv'
-	#img = cv2.imread(img_path)
 	df = pd.read_csv(args.anno_path)
+	label_names = sorted(set(df['label_name'].values.tolist()))
+	colormap = get_colormap(label_names, args.colormap_name)
+	#print(colormap)
 
-	colormap = {}
-	#colormap_name = 'gist_rainbow'
-	label_names = sorted(df['label_name'].values.tolist())
-	cmap = plt.get_cmap(args.colormap_name)
-	for i in range(len(label_names)):
-		#print( float(i)/len(label_names) )
-		#print( cmap(float(i)/len(label_names)) )
-		#print( np.array(cmap(float(i)/len(label_names))) )
-		#print( np.array(cmap(float(i)/len(label_names)))*255 )
-		rgb = [int(d) for d in np.array(cmap(float(i)/len(label_names)))*255][:3]
-		print(rgb)
-		colormap[label_names[i]] = tuple(rgb)
-		#colormap[label_names[i]] = tuple([int(d) for d in np.array(cmap(float(i)/len(label_names)))*255][:3])
-		#print(colormap[label_names[i]])
-	
 	img_paths = sorted(set(df['image_path'].values.tolist()))
 	for img_path in img_paths:
-		print(img_path)
 		cond = df['image_path']==img_path
 		df_img = df.loc[cond, ['label_name', 'xmin', 'ymin', 'xmax', 'ymax']]
 		annos = df_img.to_dict('record')
-		
-		for anno in annos:
-			print(anno)
-		
-		drawn_anno_path = args.drawn_anno_dir + img_path.split('/')[-1]
-		visual_anno(img_path, annos, colormap, drawn_anno_path)
+		drawn_anno_img_path = None
+		if args.drawn_anno_dir != None:
+			drawn_anno_img_path = args.drawn_anno_dir + img_path.split('/')[-1]
+		visual_anno(img_path, annos, colormap, drawn_anno_img_path)
 
 
-#def draw_anno_on_image(img_path, annos, colormap, ):
-def visual_anno(img_path, annos, colormap, drawn_anno_path):
+def get_colormap(label_names, colormap_name):
+	colormap = {}	
+	cmap = plt.get_cmap(colormap_name)
+	for i in range(len(label_names)):
+		rgb = [int(d) for d in np.array(cmap(float(i)/len(label_names)))*255][:3]
+		colormap[label_names[i]] = tuple(rgb)
+
+	return colormap
+
+
+def visual_anno(img_path, annos, colormap, drawn_anno_img_path=None):
+	# Draw annotion data on image.
 	img = cv2.imread(img_path)
 	for a in annos:
 		color = colormap[a['label_name']]
 		cv2.rectangle(img, (a['xmin'], a['ymin']), (a['xmax'], a['ymax']), color, 2)
-		cv2.putText(img, a['label_name'], (a['xmin'], a['ymin']-5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2, cv2.LINE_AA)
+		text = '{}'.format(a['label_name'])
+		cv2.putText(img, text, (a['xmin'], a['ymin']-5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2, cv2.LINE_AA)
 
-	cv2.imwrite(drawn_anno_path, img)
-	#cv2.imshow('image', img)
-	#cv2.waitKey(0)
-	#cv2.destroyAllWindows()
+	# Save or show an image.
+	if drawn_anno_img_path != None:
+		cv2.imwrite(drawn_anno_img_path, img)
+	else:
+		cv2.imshow('image', img)
+		cv2.waitKey(0)
+		cv2.destroyAllWindows()
 	
 
 def parse_args():
