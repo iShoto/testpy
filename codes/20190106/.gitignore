@@ -101,22 +101,8 @@ ENV/
 .mypy_cache/
 
 # etc
-#codes/*/data/
-codes/20190106/data/
-codes/20190599/data/
-codes/20190805/pytorch_advanced/
-codes/20200104_metric_learning_mnist/inputs/
-codes/20200104_metric_learning_mnist/outputs/
-codes/20200105_metric_learning_mnist_query_and_gallery/inputs/
-codes/20200105_metric_learning_mnist_query_and_gallery/outputs/
-codes/20200106_metric_learning_cifar10/inputs/
-codes/20200106_metric_learning_cifar10/outputs/
-codes/20200112_pytorch_cifar10/experiments/
-codes/20200112_pytorch_cifar10/src/pytorch-cifar/
-codes/20200113_pytorch_cifar10_arcface/src/old/
-codes/20200119_pytorch_object_detection/src/vision/
-codes/20200119_pytorch_object_detection/src/cocoapi/
-codes/20200119_pytorch_object_detection/experiments/
+data/
+experiments/
 *pth
 
 
