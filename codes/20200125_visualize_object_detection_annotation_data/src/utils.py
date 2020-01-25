@@ -14,6 +14,7 @@ def main():
 
 	img_paths = sorted(set(df['image_path'].values.tolist()))
 	for img_path in img_paths:
+		assert os.path.exists(img_path)
 		cond = df['image_path']==img_path
 		df_img = df.loc[cond, ['label_name', 'xmin', 'ymin', 'xmax', 'ymax']]
 		annos = df_img.to_dict('record')
