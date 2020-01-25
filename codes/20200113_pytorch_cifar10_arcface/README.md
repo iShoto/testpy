@@ -1,11 +1,9 @@
-# Metric Learning with MNIST
-This library is Metric learning using center loss for MNIST.
+# PyTorch + CIFAR10 + ResNet18 + ArcFace
+This library is Metric learning using ResNet18 + ArcFace for CIFAR10.
 
 
 # Feature
-- Query and Gallery preparation from MNIST
-- Feature Extraction
-- Distance Caliculation with Cosine Similarity
+- Distance Caliculation with ArcFace
 
 
 # Requirement
@@ -27,34 +25,8 @@ git clone https://github.com/iShoto/testpy.git
 # Usage
  
 ```sh
-$ cd testpy/codes/20200105_metric_learning_mnist_query_and_gallery/src/
-$ python python image_seach_query.py
-num query: 1, num gallery: 100
-
-Query Image Label: 9
-
-Search Result
-        dist                      img_path  label
-0   0.005382  ../inputs/gallery/9_1801.png      9
-1   0.018921  ../inputs/gallery/9_4237.png      9
-2   0.036690   ../inputs/gallery/9_481.png      9
-3   0.047976  ../inputs/gallery/9_7380.png      9
-4   0.069177  ../inputs/gallery/9_8213.png      9
-5   0.076138  ../inputs/gallery/9_3970.png      9
-6   0.078646  ../inputs/gallery/9_2685.png      9
-7   0.107746  ../inputs/gallery/9_5977.png      9
-8   0.387746  ../inputs/gallery/9_4505.png      9
-9   0.523175  ../inputs/gallery/3_8981.png      3
-10  0.538863   ../inputs/gallery/3_927.png      3
-11  0.560314   ../inputs/gallery/3_142.png      3
-12  0.565455  ../inputs/gallery/3_8451.png      3
-13  0.582634  ../inputs/gallery/3_4755.png      3
-14  0.586750  ../inputs/gallery/3_2174.png      3
-15  0.589938  ../inputs/gallery/3_9986.png      3
-16  0.675965  ../inputs/gallery/1_4491.png      1
-17  0.682165  ../inputs/gallery/3_8508.png      3
-18  0.683414  ../inputs/gallery/3_4785.png      3
-19  0.698637  ../inputs/gallery/1_1038.png      1
+$ cd testpy/codes/20200113_pytorch_cifar10_arcface/src/
+$ python train.py
 ```
 
 
