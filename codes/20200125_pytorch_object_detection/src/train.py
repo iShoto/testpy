@@ -27,7 +27,6 @@ def main():
 
 	print('Loading a model...')
 	num_classes = 2
-	#model = models.get_maskrcnn_resnet50(num_classes)
 	model = models.get_fasterrcnn_resnet50(num_classes)
 	model.to(device)
 
@@ -53,8 +52,8 @@ def main():
 		print('')
 
 
-def train(model, optimizer, train_data_loader, device, print_freq=10):
-	model.train()
+#def train(model, optimizer, train_data_loader, device, print_freq=10):
+#	model.train()
 
 
 def parse_args():
@@ -64,8 +63,8 @@ def parse_args():
 	# Dataset
 	arg_parser.add_argument("--dataset_name", default='PennFudanPed')
 	arg_parser.add_argument("--data_dir", default='D:/workspace/datasets/PennFudanPed/')
-	arg_parser.add_argument('--anno_dir', default='../experiments/annos/')
-	arg_parser.add_argument('--anno_path', default='../experiments/annos/anno_penn-fudan-ped.csv')
+	arg_parser.add_argument('--anno_dir', default='../data/annos/')
+	arg_parser.add_argument('--anno_path', default='../data/annos/anno_penn-fudan-ped.csv')
 
 	# Model
 	arg_parser.add_argument("--model_name", default='FasterRCNN-ResNet50')
@@ -73,7 +72,7 @@ def parse_args():
 	arg_parser.add_argument("--model_ckpt_path_temp", default='../experiments/models/checkpoints/{}_{}_epoch={}.pth')
 
 	# Others
-	arg_parser.add_argument("--n_epoch", default=1, type=int)
+	arg_parser.add_argument("--n_epoch", default=10, type=int)
 		
 	args = arg_parser.parse_args()
 

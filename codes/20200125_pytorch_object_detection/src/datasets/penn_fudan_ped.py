@@ -62,8 +62,8 @@ class PennFudanPedDataset(object):
 
 def get_dataset(anno_path):
 	# use our dataset and defined transformations
-	dataset_train = PennFudanPedDataset(anno_path, 'train', get_transform(train=True))
-	dataset_test = PennFudanPedDataset(anno_path, 'test', get_transform(train=False))
+	dataset_train = PennFudanPedDataset(anno_path, 'train', __get_transform(train=True))
+	dataset_test = PennFudanPedDataset(anno_path, 'test', __get_transform(train=False))
 
 	# define training and validation data loaders
 	train_data_loader = torch.utils.data.DataLoader(
@@ -75,12 +75,19 @@ def get_dataset(anno_path):
 	return train_data_loader, test_data_loader
 
 
-def get_transform(train):
+def __get_transform(train):
 	transforms = []
 	transforms.append(T.ToTensor())
 	if train:
 		transforms.append(T.RandomHorizontalFlip(0.5))
 	return T.Compose(transforms)
+
+
+def get_image_id_dict(anno_path, data_mode='test'):
+	dataset_test = PennFudanPedDataset(anno_path, data_mode, __get_transform(train=False))
+	img_id_dict = dataset_test.img_dict
+	
+	return img_id_dict
 
 
 def test():

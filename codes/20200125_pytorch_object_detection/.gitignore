@@ -106,5 +106,6 @@ experiments/
 *pth
 src/cocoapi/
 src/vision/
+src/mAP/
 
 
