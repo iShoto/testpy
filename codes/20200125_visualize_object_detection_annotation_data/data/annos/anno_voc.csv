@@ -1,0 +1,6 @@
+image_path,label_name,xmin,ymin,xmax,ymax
+../data/images/2007_006490.jpg,bird,80,309,109,332
+../data/images/2007_006490.jpg,person,143,165,169,248
+../data/images/2007_006490.jpg,boat,210,9,269,67
+../data/images/2007_006490.jpg,boat,172,27,226,65
+../data/images/2007_006490.jpg,boat,128,25,185,67
