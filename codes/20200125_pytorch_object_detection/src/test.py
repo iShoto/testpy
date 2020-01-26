@@ -8,13 +8,16 @@ import os
 import argparse
 import cv2
 import pandas as pd
+from tqdm import trange
 
 from datasets import penn_fudan_ped
 import models
 
 import sys
-sys.path.append('./vision/references/detection/')
-import engine, utils
+#sys.path.append('./vision/references/detection/')
+#import engine, utils
+sys.path.append('./mAP/')
+import main_ex
 
 
 def main():
@@ -25,12 +28,12 @@ def main():
 	train_data_loader, test_data_loader = penn_fudan_ped.get_dataset(args.data_anno_path)
 
 	print('Loading a model from {}'.format(args.model_weight_path))
-	model = models.get_fasterrcnn_resnet50(num_classes)
-	model.load_state_dict(torch.load(args.model_weight_path))
+	model = models.get_fasterrcnn_resnet50(num_classes, pretrained=False)
+	#model.load_state_dict(torch.load(args.model_weight_path))
 	model = model.to(device)
 
 	#detect_objects(args.data_anno_path, test_data_loader, model, device, args.det_result_path)
-	calc_score(args.data_anno_path, args.det_result_path)
+	calc_score(args.data_anno_path, args.anno_text_dir, args.det_result_path, args.det_text_dir)
 	#draw_detection_results(model, test_data_loader, device, args)
 
 
@@ -86,111 +89,44 @@ def detect_objects(data_anno_path, test_data_loader, model, device, det_result_p
 	print('Detection results saved to {}'.format(det_result_path))
 
 
-
-def detect_objects_pre(model, test_data_loader, device):
-	# gt, det
-	# text for mAP
-	model.eval()
-
-	# Draw detection results to test images.
-	for batch_idx, (inputs, targets) in enumerate(test_data_loader):
-		# Display progress.
-		precentage = int((batch_idx+1)/len(test_data_loader)*100)
-		print('\rDrawing detection results to images... {:>3}%'.format(precentage), end='')
-
-		# Prepare output image data.
-		imgs = [img for img in inputs]
-		image_ids = [target['image_id'].numpy().tolist()[0] for target in targets]
-
-		# ================================ Ground Truth ================================
-		# Process ground truth per image. "targets" is batch data.
-		image_id_checker = []
-		for t in targets:
-			# Organize image ID.
-			image_id = t['image_id'].numpy().tolist()[0]
-			image_id_checker.append(image_id)
-			gt_file_name = 'image_{}.txt'.format(image_id)
-			
-			# Organize labels and bounding boxes.
-			labels = t['labels'].numpy.tolist()
-			boxes = [[int(round(b)) for b in box] for box in t['boxes'].numpy().tolist()]
-			assert len(labels) == len(boxes)
-			text = ''
-			for j in range(len(labels)):
-				text += '{} {} {} {} {}\n'.format(labels[j], boxes[j][0], boxes[j][1], boxes[j][2], boxes[j][3])
-			text = text.strip()
-
-			# Save the ground truth file.
-			f = open(gt_file_dir+gt_file_name, 'w')
-			f.write(text)
-			f.close()
-
-		# ================================ Detection ================================
-		# Detect objects
-		inputs = [img.to(device) for img in inputs]
-		outputs = model(inputs)
-		for i in range(len(outputs)):
-			# Organize output image.
-			img = imgs[i]
-			img = img.mul(255).permute(1,2,0).byte().numpy()
-			img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
-
-			# Set output image index.
-			image_id = image_ids[i]
-
-			# Organize detection results.
-			scores = [round(d,3) for d in outputs[i]['scores'].tolist()]
-			boxes = [[int(round(b)) for b in box] for box in outputs[i]['boxes'].tolist()]
-			labels = outputs[i]['labels'].tolist()
-			assert len(scores) == len(boxes) == len(labels)
-
-			# Draw detection results to the image.
-			for j in range(len(scores)):
-				if scores[j] < args.score_thresh:
-					continue
-				cv2.rectangle(img, (boxes[j][0], boxes[j][1]), (boxes[j][2], boxes[j][3]), (0,255,0), 2)
-				text = '{}: {}%'.format(labels[j], int(scores[j]*100))
-				cv2.putText(img, text, (boxes[j][0], boxes[j][1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2, cv2.LINE_AA)
-
-			# Resize and save the image.
-			if args.visual_img_half == True:
-				h,w,c = img.shape
-				img = cv2.resize(img, (int(w*0.5), int(h*0.5)))
-			cv2.imwrite(args.visual_img_dir+'visual_img_{}.png'.format(str(image_id).zfill(6)), img)
-
-	print('')
-	print('Done.')
-
-
-def calc_score(data_anno_path, det_result_path):
+def calc_score(gt_csv_path, gt_text_dir, det_csv_path, det_text_dir):
 	# Use https://github.com/Cartucho/mAP
 
-	#engine.evaluate(model, test_data_loader, device=device)
-	df_anno = pd.read_csv(data_anno_path)
-	df_det = pd.read_csv(det_result_path)
-
-	print(df_anno.head().to_string())
-	print('')
-	print(df_det.head().to_string())
-	print('')
-
-	"""
-	   label  xmax  xmin  ymax  ymin data_type                                         image_path
-	0      1   301   159   430   181     train  D:/workspace/datasets/PennFudanPed/PNGImages/F...
-	1      1   534   419   485   170     train  D:/workspace/datasets/PennFudanPed/PNGImages/F...
-	2      1   190    67   379    92     train  D:/workspace/datasets/PennFudanPed/PNGImages/F...
-	3      1   446   292   420   134      test  D:/workspace/datasets/PennFudanPed/PNGImages/F...
-	4      1   323   167   337    59     train  D:/workspace/datasets/PennFudanPed/PNGImages/F...
-
-	   label  score  xmin  ymin  xmax  ymax                                         image_path
-	0      1  0.999   287   129   447   421  D:/workspace/datasets/PennFudanPed/PNGImages/F...
-	1      1  0.999   207    97   351   392  D:/workspace/datasets/PennFudanPed/PNGImages/F...
-	2      1  0.999     0   108    87   383  D:/workspace/datasets/PennFudanPed/PNGImages/F...
-	3      1  0.999    36   102    95   355  D:/workspace/datasets/PennFudanPed/PNGImages/F...
-	4      1  0.999   273    99   354   357  D:/workspace/datasets/PennFudanPed/PNGImages/F...
-	"""
+	make_text_files(gt_csv_path, gt_text_dir, file_type='gt')
+	make_text_files(det_csv_path, det_text_dir, file_type='det')
+	main_ex.main()
 
 
+def make_text_files(csv_path, text_dir, file_type):
+	# Use library https://github.com/Cartucho/mAP
+	# Get image paths.
+	df = pd.read_csv(csv_path)
+	if file_type == 'gt':
+		print(df.columns)
+		cond_test = df['data_type']=='test'
+		img_paths = sorted(set(df.loc[cond_test, 'image_path'].values.tolist()))
+	elif file_type == 'det':
+		img_paths = sorted(set(df['image_path'].values.tolist()))
+	
+	# Make text files.
+	for i in trange(len(img_paths), desc='Making {} text files'.format(file_type)):
+		# Set text.
+		text = ''
+		img_path = img_paths[i]
+		cond_img = df['image_path']==img_path
+		records = df.loc[cond_img, :].to_dict('record')
+		for r in records:
+			if file_type == 'gt':
+				text += '{} {} {} {} {}\n'.format(r['label'], r['xmax'], r['xmin'], r['ymax'], r['ymin'])
+			elif file_type == 'det':
+				text += '{} {} {} {} {} {}\n'.format(r['label'], round(r['score'], 3), r['xmax'], r['xmin'], r['ymax'], r['ymin'])
+		text = text.strip()
+
+		# Save text file.
+		text_name = img_path.split('/')[-1].split('.')[0]+'.txt'
+		f = open(text_dir+text_name, 'w')
+		f.write(text)
+		f.close()
 
 
 def draw_results(model, test_data_loader, device, args):
@@ -273,6 +209,7 @@ def parse_args():
 	arg_parser.add_argument("--dataset_name", default='PennFudanPed')
 	arg_parser.add_argument("--data_dir", default='D:/workspace/datasets/PennFudanPed/')
 	arg_parser.add_argument('--data_anno_path', default='../data/annos/anno_penn-fudan-ped.csv')
+	arg_parser.add_argument('--anno_text_dir', default='./mAP/input/ground-truth/')
 
 	# Model
 	arg_parser.add_argument("--model_name", default='FasterRCNN-ResNet50')
@@ -281,6 +218,7 @@ def parse_args():
 	# Results
 	arg_parser.add_argument('--det_result_dir', default='../experiments/results/detections/')
 	arg_parser.add_argument('--det_result_path', default='../experiments/results/detections/dets.csv')
+	arg_parser.add_argument('--det_text_dir', default='./mAP/input/detection-results/')
 	arg_parser.add_argument('--visual_img_dir', default='../experiments/results/visual_images/')
 	arg_parser.add_argument('--visual_img_half', default=1, type=int, help='Resize images half. 0 is False, 1 is True.')
 
@@ -291,6 +229,8 @@ def parse_args():
 
 	# Make directories.
 	os.makedirs(args.det_result_dir, exist_ok=True)
+	os.makedirs(args.anno_text_dir, exist_ok=True)
+	os.makedirs(args.det_text_dir, exist_ok=True)
 	os.makedirs(args.visual_img_dir, exist_ok=True)
 	
 	# Validate paths.

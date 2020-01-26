@@ -22,9 +22,9 @@ def get_maskrcnn_resnet50(num_classes):
 	return model
 
 
-def get_fasterrcnn_resnet50(num_classes):
+def get_fasterrcnn_resnet50(num_classes, pretrained=False):
 	# load a model pre-trained pre-trained on COCO
-	model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+	model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=pretrained)
 
 	# replace the classifier with a new one, that has num_classes which is user-defined
 	num_classes = 2  # 1 class (person) + background
