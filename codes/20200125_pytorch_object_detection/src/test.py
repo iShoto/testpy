@@ -1,14 +1,19 @@
 import torch
+"""
 import torch.nn as nn
 import torch.optim as optim
 import torch.nn.functional as F
 import torch.backends.cudnn as cudnn
+"""
 
 import os
 import argparse
 import cv2
 import pandas as pd
 from tqdm import trange
+import shutil
+import matplotlib.pyplot as plt
+import numpy as np
 
 from datasets import penn_fudan_ped
 import models
@@ -29,12 +34,12 @@ def main():
 
 	print('Loading a model from {}'.format(args.model_weight_path))
 	model = models.get_fasterrcnn_resnet50(num_classes, pretrained=False)
-	#model.load_state_dict(torch.load(args.model_weight_path))
+	model.load_state_dict(torch.load(args.model_weight_path))
 	model = model.to(device)
 
 	#detect_objects(args.data_anno_path, test_data_loader, model, device, args.det_result_path)
-	calc_score(args.data_anno_path, args.anno_text_dir, args.det_result_path, args.det_text_dir)
-	#draw_detection_results(model, test_data_loader, device, args)
+	#calc_score(args.data_anno_path, args.anno_text_dir, args.det_result_path, args.det_text_dir)
+	draw_gt_n_det(args.data_anno_path, args.det_result_path, args.drawn_img_dir)
 
 
 def detect_objects(data_anno_path, test_data_loader, model, device, det_result_path):
@@ -102,7 +107,6 @@ def make_text_files(csv_path, text_dir, file_type):
 	# Get image paths.
 	df = pd.read_csv(csv_path)
 	if file_type == 'gt':
-		print(df.columns)
 		cond_test = df['data_type']=='test'
 		img_paths = sorted(set(df.loc[cond_test, 'image_path'].values.tolist()))
 	elif file_type == 'det':
@@ -117,9 +121,9 @@ def make_text_files(csv_path, text_dir, file_type):
 		records = df.loc[cond_img, :].to_dict('record')
 		for r in records:
 			if file_type == 'gt':
-				text += '{} {} {} {} {}\n'.format(r['label'], r['xmax'], r['xmin'], r['ymax'], r['ymin'])
+				text += '{} {} {} {} {}\n'.format(r['label'], r['xmin'], r['ymin'], r['xmax'], r['ymax'])
 			elif file_type == 'det':
-				text += '{} {} {} {} {} {}\n'.format(r['label'], round(r['score'], 3), r['xmax'], r['xmin'], r['ymax'], r['ymin'])
+				text += '{} {} {} {} {} {}\n'.format(r['label'], round(r['score'], 3), r['xmin'], r['ymin'], r['xmax'], r['ymax'])
 		text = text.strip()
 
 		# Save text file.
@@ -129,68 +133,55 @@ def make_text_files(csv_path, text_dir, file_type):
 		f.close()
 
 
-def draw_results(model, test_data_loader, device, args):
-	model.eval()
 
-	# Draw detection results to test images.
-	for batch_idx, (inputs, targets) in enumerate(test_data_loader):
-		# Display progress.
-		precentage = int((batch_idx+1)/len(test_data_loader)*100)
-		print('\rDrawing detection results to images... {:>3}%'.format(precentage), end='')
+def draw_gt_n_det(gt_csv_path, det_csv_path, drawn_img_dir):
+	# Use library https://github.com/Cartucho/mAP
+	# Get image paths.
+	df_gt = pd.read_csv(gt_csv_path)
+	df_det = pd.read_csv(det_csv_path)
+	df_gt['data_type'] = 'gt'
+	df_det['data_type'] = 'det'
 
-		# Prepare output image data.
-		imgs = [img for img in inputs]
-		img_ids = [target['image_id'].numpy().tolist()[0] for target in targets]
+	data_types = ['gt', 'det']
+	colormap = get_colormap(data_types)
 
-		# Detect objects
-		inputs = [img.to(device) for img in inputs]
-		outputs = model(inputs)
-		for i in range(len(outputs)):
-			# Organize output image.
-			img = imgs[i]
-			img = img.mul(255).permute(1,2,0).byte().numpy()
-			img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+	img_paths = sorted(set(df_det['image_path'].values.tolist()))
+	for i in trange(len(img_paths), desc=''):
+		img_path = img_paths[i]
+		cond_gt = df_gt['image_path']==img_path
+		cond_det = df_det['image_path']==img_path
+		gt_annos = df_gt.loc[cond_gt, :].to_dict('record')
+		det_annos = df_det.loc[cond_det, :].to_dict('record')
+		annos = gt_annos + det_annos
+		drawn_img_path = drawn_img_dir + img_path.split('/')[-1]
+		draw_gt_n_det_core(img_path, annos, colormap, drawn_img_path=drawn_img_path, half_img=False)
+		
 
-			# Set output image index.
-			img_id = img_ids[i]
+def get_colormap(label_names, colormap_name='gist_rainbow'):
+	colormap = {}   
+	cmap = plt.get_cmap(colormap_name)
+	for i in range(len(label_names)):
+		rgb = [int(d) for d in np.array(cmap(float(i)/len(label_names)))*255][:3]
+		colormap[label_names[i]] = tuple(rgb)
 
-			# Organize detection results.
-			scores = [round(d,3) for d in outputs[i]['scores'].tolist()]
-			boxes = [[int(round(b)) for b in box] for box in outputs[i]['boxes'].tolist()]
-			labels = outputs[i]['labels'].tolist()
-			assert len(scores) == len(boxes) == len(labels)
-
-			# Draw detection results to the image.
-			for j in range(len(scores)):
-				if scores[j] < args.score_thresh:
-					continue
-				cv2.rectangle(img, (boxes[j][0], boxes[j][1]), (boxes[j][2], boxes[j][3]), (0,255,0), 2)
-				text = '{}: {}%'.format(labels[j], int(scores[j]*100))
-				cv2.putText(img, text, (boxes[j][0], boxes[j][1]-5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0,255,0), 2, cv2.LINE_AA)
-
-			# Resize and save the image.
-			if args.visual_img_half == True:
-				h,w,c = img.shape
-				img = cv2.resize(img, (int(w*0.5), int(h*0.5)))
-			cv2.imwrite(args.visual_img_dir+'visual_img_{}.png'.format(str(img_id).zfill(6)), img)
-
-	print('')
-	print('Done.')
+	return colormap
 
 
-def draw_results_core(img_path, annos, colormap, drawn_img_path=None, half_img=False):
+def draw_gt_n_det_core(img_path, annos, colormap, drawn_img_path=None, half_img=False):
 	# Draw annotion data on image.
 	img = cv2.imread(img_path)
 	for a in annos:
-		color = colormap[a['label_name']]
+		color = colormap[a['data_type']]
 		cv2.rectangle(img, (a['xmin'], a['ymin']), (a['xmax'], a['ymax']), color, 2)
-		text = '{}'.format(a['label_name'])
+		text = '{}'.format(a['data_type'])
+		if a['data_type'] == 'det':
+			text = '{}: {}%'.format(a['data_type'], int(a['score']*100))
 		cv2.putText(img, text, (a['xmin'], a['ymin']-5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2, cv2.LINE_AA)
 
 	# Save or show an image.
 	if drawn_img_path != None:
 		# Resize the image.
-		if args.half_img == True:
+		if half_img == True:
 			h,w,c = img.shape
 			img = cv2.resize(img, (int(w*0.5), int(h*0.5)))
 		# Save the image.
@@ -199,6 +190,12 @@ def draw_results_core(img_path, annos, colormap, drawn_img_path=None, half_img=F
 		cv2.imshow('image', img)
 		cv2.waitKey(0)
 		cv2.destroyAllWindows()
+
+
+def remake_dir(directory):
+	if os.path.exists(directory):
+		shutil.rmtree(directory)
+	os.makedirs(directory)
 
 
 def parse_args():
@@ -219,7 +216,7 @@ def parse_args():
 	arg_parser.add_argument('--det_result_dir', default='../experiments/results/detections/')
 	arg_parser.add_argument('--det_result_path', default='../experiments/results/detections/dets.csv')
 	arg_parser.add_argument('--det_text_dir', default='./mAP/input/detection-results/')
-	arg_parser.add_argument('--visual_img_dir', default='../experiments/results/visual_images/')
+	arg_parser.add_argument('--drawn_img_dir', default='../experiments/results/drawn_images/')
 	arg_parser.add_argument('--visual_img_half', default=1, type=int, help='Resize images half. 0 is False, 1 is True.')
 
 	# Others 
@@ -229,16 +226,16 @@ def parse_args():
 
 	# Make directories.
 	os.makedirs(args.det_result_dir, exist_ok=True)
-	os.makedirs(args.anno_text_dir, exist_ok=True)
-	os.makedirs(args.det_text_dir, exist_ok=True)
-	os.makedirs(args.visual_img_dir, exist_ok=True)
+	os.makedirs(args.drawn_img_dir, exist_ok=True)
+	remake_dir(args.anno_text_dir)
+	remake_dir(args.det_text_dir)
 	
 	# Validate paths.
 	assert os.path.exists(args.data_dir)
 	assert os.path.exists(args.data_anno_path)
 	assert os.path.exists(args.model_weight_path)
 	assert os.path.exists(args.det_result_dir)
-	assert os.path.exists(args.visual_img_dir)
+	assert os.path.exists(args.drawn_img_dir)
 
 	return args
 
