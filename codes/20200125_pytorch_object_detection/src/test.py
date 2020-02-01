@@ -1,10 +1,4 @@
 import torch
-"""
-import torch.nn as nn
-import torch.optim as optim
-import torch.nn.functional as F
-import torch.backends.cudnn as cudnn
-"""
 
 import os
 import argparse
@@ -14,15 +8,16 @@ from tqdm import trange
 import shutil
 import matplotlib.pyplot as plt
 import numpy as np
+import time
 
 from datasets import penn_fudan_ped
 import models
 
-import sys
+#import sys
 #sys.path.append('./vision/references/detection/')
 #import engine, utils
-sys.path.append('./mAP/')
-import main_ex
+#sys.path.append('./mAP/')
+from mAP import main_ex
 
 
 def main():
@@ -38,8 +33,8 @@ def main():
 	model = model.to(device)
 
 	#detect_objects(args.data_anno_path, test_data_loader, model, device, args.det_result_path)
-	#calc_score(args.data_anno_path, args.anno_text_dir, args.det_result_path, args.det_text_dir)
-	draw_gt_n_det(args.data_anno_path, args.det_result_path, args.drawn_img_dir)
+	calc_score(args.data_anno_path, args.anno_text_dir, args.det_result_path, args.det_text_dir, args.score_path)
+	#draw_gt_n_det(args.data_anno_path, args.det_result_path, args.drawn_img_dir)
 
 
 def detect_objects(data_anno_path, test_data_loader, model, device, det_result_path):
@@ -94,15 +89,28 @@ def detect_objects(data_anno_path, test_data_loader, model, device, det_result_p
 	print('Detection results saved to {}'.format(det_result_path))
 
 
-def calc_score(gt_csv_path, gt_text_dir, det_csv_path, det_text_dir):
+def calc_score(gt_csv_path, gt_text_dir, det_csv_path, det_text_dir, score_path):
 	# Use https://github.com/Cartucho/mAP
+	# Remember current path because it changes in mAP calculation processing.
+	current_path = os.getcwd()
 
-	make_text_files(gt_csv_path, gt_text_dir, file_type='gt')
-	make_text_files(det_csv_path, det_text_dir, file_type='det')
-	main_ex.main()
+	# Calculate scores.
+	__make_text_files(gt_csv_path, gt_text_dir, file_type='gt')
+	__make_text_files(det_csv_path, det_text_dir, file_type='det')
+	result = main_ex.main()
+
+	# Make DataFrame.
+	df = pd.DataFrame(result)
+	df = df[['class_name', 'ap', 'recall', 'precision', 'gt', 'n_det', 'tp', 'fp']]
+	print(df)
+
+	# Save scores.
+	os.chdir(current_path)
+	assert os.getcwd() == current_path
+	df.to_csv(score_path, index=False)
 
 
-def make_text_files(csv_path, text_dir, file_type):
+def __make_text_files(csv_path, text_dir, file_type):
 	# Use library https://github.com/Cartucho/mAP
 	# Get image paths.
 	df = pd.read_csv(csv_path)
@@ -131,7 +139,6 @@ def make_text_files(csv_path, text_dir, file_type):
 		f = open(text_dir+text_name, 'w')
 		f.write(text)
 		f.close()
-
 
 
 def draw_gt_n_det(gt_csv_path, det_csv_path, drawn_img_dir):
@@ -195,6 +202,7 @@ def draw_gt_n_det_core(img_path, annos, colormap, drawn_img_path=None, half_img=
 def remake_dir(directory):
 	if os.path.exists(directory):
 		shutil.rmtree(directory)
+	time.sleep(1)
 	os.makedirs(directory)
 
 
@@ -216,6 +224,8 @@ def parse_args():
 	arg_parser.add_argument('--det_result_dir', default='../experiments/results/detections/')
 	arg_parser.add_argument('--det_result_path', default='../experiments/results/detections/dets.csv')
 	arg_parser.add_argument('--det_text_dir', default='./mAP/input/detection-results/')
+	arg_parser.add_argument('--score_dir', default='../experiments/results/score/')
+	arg_parser.add_argument('--score_path', default='../experiments/results/score/score.csv')
 	arg_parser.add_argument('--drawn_img_dir', default='../experiments/results/drawn_images/')
 	arg_parser.add_argument('--visual_img_half', default=1, type=int, help='Resize images half. 0 is False, 1 is True.')
 
@@ -227,6 +237,7 @@ def parse_args():
 	# Make directories.
 	os.makedirs(args.det_result_dir, exist_ok=True)
 	os.makedirs(args.drawn_img_dir, exist_ok=True)
+	os.makedirs(args.score_dir, exist_ok=True)
 	remake_dir(args.anno_text_dir)
 	remake_dir(args.det_text_dir)
 	
@@ -235,6 +246,7 @@ def parse_args():
 	assert os.path.exists(args.data_anno_path)
 	assert os.path.exists(args.model_weight_path)
 	assert os.path.exists(args.det_result_dir)
+	assert os.path.exists(args.score_dir)
 	assert os.path.exists(args.drawn_img_dir)
 
 	return args
