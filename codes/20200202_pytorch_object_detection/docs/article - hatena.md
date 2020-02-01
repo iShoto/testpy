@@ -1,45 +1,48 @@
 [PyTorchの物体検出チュートリアル](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html)が、
-個人的にいじりたい場所が沢山あったので、色々と魔改造してみた。
-コードは[こちら](https://github.com/iShoto/testpy/tree/master/codes/20200125_pytorch_object_detection)。
+個人的にいじりたい場所だらけだったので、色々と魔改造してみた。
+コードは[こちら](https://github.com/iShoto/testpy/tree/master/codes/20200202_pytorch_object_detection)。
 
 
 ## 概要
 
 チュートリアルではTrainingだけだが、今回はTestに関するコードも実装している。
 それを含めて以下が今回魔改造した点。
-TrainingとTestで各々3つずつ魔改造ポイントがある。
+TrainingとTestで各々3つずつポイントがある。
 
 ### 1. Training
 
-- 1.1. データのCSV化  
+- **1.1. データのCSV化**  
 チュートリアルではデータセットをPyTorchの手続きに従ってクラス化していたが、
-自分はどんなデータセットでも、一旦CSVフォーマットに変換してからクラス化している。
+自分はほとんどのデータセットを一旦CSVファイルにまとめてからクラス化している。
 CSV化することでPandasのDataFrameにできるので、色々な実験をしたい時に便利。
 
-- 1.2. モデルをFaster RCNNに変更  
-ホントは様々なモデルが扱えるMMDetectionが良かったが、自分にはちょっとハードルが高かった。
+- **1.2. モデルをFaster RCNNに変更**  
+ホントは様々なモデルが扱える[MMDetection](https://github.com/open-mmlab/mmdetection)
+が良かったが、自分にはちょっとハードルが高かった。
 魔改造第2弾があれば使ってみたい。今回はTorchVision。
 チュートリアルではMask RCNNを使っていたが、特にマスクは不要なのでFaster RCNNに変更した。
-ただし、これはチュートリアルにも載っている。
+ただし、これはチュートリアルにも例として呼び出し方が載っている。
 あとMask RCNNは、今回は関係ないけど、人のマスクでは頭が真っ平になるのが気に食わない
 っていうのもあって敬遠している。
 
-- 1.3. チェックポイントを保存  
+- **1.3. チェックポイントを保存**  
 チュートリアルではモデル自体保存していないが、テストしたいのでチェックポイントを保存できるようにした。
 
 ### 2. Test
 
-- 2.1. 物体検出  
+- **2.1. 物体検出**  
 保存したモデルをロードして物体検出を実行。
 結果は例によってCSV化している。
 
-- 2.2. スコアをVOC方式で算出  
-cocoapiにより、訓練中にCOCO方式で算出されたmAPが出力されるが、出力結果を変数として扱うにはハードルが高かったので、[Cartucho/mAP](https://github.com/Cartucho/mAP)を利用した。
+- **2.2. スコアをVOC方式で算出**  
+cocoapiにより、訓練中にCOCO方式で算出されたmAPが出力されるが、
+出力結果を変数として簡単には取得できなかったので、[Cartucho/mAP](https://github.com/Cartucho/mAP)を利用した。
 これにより、mAPを変数として取得できるようになり、またTP/FP/Recall/Precisionなども取得できるようになっている。
 
-- 2.3. Ground Truthと検出結果の描画  
+- **2.3. Ground Truthと検出結果の描画**  
 タイトルの通り。
 スコアを見るだけは分からない具体的な誤検出や未検出の原因を画像で確認する。
+
 
 ### 1. Training
 
@@ -50,7 +53,7 @@ cocoapiにより、訓練中にCOCO方式で算出されたmAPが出力される
 
 #### 1.1 データのCSV化
 
-ファイルは外部化している。
+コードは外部ファイル化している。
 他のデータセットも増やせるよう、データセット用のディレクトリーを用意して、`./datasets/penn_fudan_ped.py`に実装している。
 `train.py`の`main()`では以下のように呼び出している。
 最終的には、trainとtestのDataLoaderを返しているが、それらを取得するための`get_dataset()`の引数はCSVファイルのパスになる。
@@ -144,14 +147,15 @@ Saved a model checkpoint at ../experiments/models/checkpoints/PennFudanPed_Faste
 
 ### 2. Test
 
-Trainingで保存したモデルの重みをロードして幾つかのTestを行う。
+Trainingで保存したモデルの重みをロードして、
+物体検出とそのスコアの算出および検出結果の画像描画をTestとして行う。
 
 #### 2.1. 物体検出
 
-まずはシンプルに物体検出。
+まずはシンプルに物体検出を実施。
 コードは`./src/test.py`の`detect_objects()`を参照。
 以下のように検出結果が標準出力される。
-これらは例によってCSVファイルに保存される。
+これは例によってCSVファイルに保存される。
 
 ```bash
 $ python .\test.py
@@ -175,10 +179,11 @@ Detection results saved to ../experiments/results/tables/dets.csv
 #### 2.2. スコアをVOC方式で算出
 
 `1.1 データのCSV化`で保存したGround TruthのCSVファイルと
-`2.1. 物体検出`で保存した検出結果のCSVファイルを照合して、VOC形式のmAPを算出する。
+`2.1. 物体検出`で保存した検出結果のCSVファイルを照合して、VOC方式のmAPを算出する。
 [Cartucho/mAP](https://github.com/Cartucho/mAP)を利用しているが、
-以下のようなmAP以外のスコアを得るために`main.py`を回収した`main_ex.py`を
+以下のようなmAP以外のスコアを得るために`main.py`を改修した`main_ex.py`を
 `./src/test.py`の`detect_objects()`から呼び出している。
+以下が実行結果。
 
 ```bash
 Making gt text files: 100%|██████████████████████████████████████████████████████████████████████████████| 50/50 [00:00<00:00, 769.32it/s]
@@ -205,11 +210,8 @@ Score saved to ../experiments/results/tables/score.csv
 Precisionの低下を導いていることが分かる。
 あと、non-maximum suppressionが上手くできてないというのも原因の１つ。
 
-|||
-|:--:|:--:|
-|[f:id:Shoto:20200202002026p:plain]|[f:id:Shoto:20200202002031p:plain]|
-|[f:id:Shoto:20200202002034p:plain]|[f:id:Shoto:20200202002038p:plain]|
-
+<div class="images-row mceNonEditable">[f:id:Shoto:20200202002031p:plain][f:id:Shoto:20200202002026p:plain]</div>
+<div class="images-row mceNonEditable">[f:id:Shoto:20200202002038p:plain][f:id:Shoto:20200202002034p:plain]</div>
 
 ## まとめ
 
@@ -226,5 +228,6 @@ Schedulerの充実などを行いたい。
 - [TORCHVISION OBJECT DETECTION FINETUNING TUTORIAL - PyTorch](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html)
 - [I can't install cocoapi on Windows 10 · Issue #185 - GitHub](https://github.com/cocodataset/cocoapi/issues/185)
 - [Clone of COCO API - GitHub](https://github.com/philferriere/cocoapi)
+- [MMDetection - GitHub](https://github.com/open-mmlab/mmdetection)
 - [Cartucho/mAP - GitHub](https://github.com/Cartucho/mAP)
 - [Albumentations - GitHub](https://github.com/albumentations-team/albumentations)
