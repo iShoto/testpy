@@ -13,10 +13,6 @@ import time
 from datasets import penn_fudan_ped
 import models
 
-#import sys
-#sys.path.append('./vision/references/detection/')
-#import engine, utils
-#sys.path.append('./mAP/')
 from mAP import main_ex
 
 
@@ -24,17 +20,18 @@ def main():
 	args = parse_args()
 	device = 'cuda' if torch.cuda.is_available() else 'cpu'
 	
-	num_classes = 2
+	# Loada dataset.
 	train_data_loader, test_data_loader = penn_fudan_ped.get_dataset(args.data_anno_path)
 
+	# Laod a model.
 	print('Loading a model from {}'.format(args.model_weight_path))
-	model = models.get_fasterrcnn_resnet50(num_classes, pretrained=False)
+	model = models.get_fasterrcnn_resnet50(args.n_classes, pretrained=False)
 	model.load_state_dict(torch.load(args.model_weight_path))
 	model = model.to(device)
 
-	#detect_objects(args.data_anno_path, test_data_loader, model, device, args.det_result_path)
-	calc_score(args.data_anno_path, args.anno_text_dir, args.det_result_path, args.det_text_dir, args.score_path)
-	#draw_gt_n_det(args.data_anno_path, args.det_result_path, args.drawn_img_dir)
+	detect_objects(args.data_anno_path, test_data_loader, model, device, args.det_result_path)
+	calc_score(args.data_anno_path, args.anno_text_dir, args.det_result_path, args.det_text_dir, args.det_score_path)
+	draw_gt_n_det(args.data_anno_path, args.det_result_path, args.visual_img_dir, args.visual_img_one_4th)
 
 
 def detect_objects(data_anno_path, test_data_loader, model, device, det_result_path):
@@ -91,7 +88,7 @@ def detect_objects(data_anno_path, test_data_loader, model, device, det_result_p
 
 def calc_score(gt_csv_path, gt_text_dir, det_csv_path, det_text_dir, score_path):
 	# Use https://github.com/Cartucho/mAP
-	# Remember current path because it changes in mAP calculation processing.
+	# Memorize current path because it changes in mAP calculation processing.
 	current_path = os.getcwd()
 
 	# Calculate scores.
@@ -141,7 +138,7 @@ def __make_text_files(csv_path, text_dir, file_type):
 		f.close()
 
 
-def draw_gt_n_det(gt_csv_path, det_csv_path, drawn_img_dir):
+def draw_gt_n_det(gt_csv_path, det_csv_path, visual_img_dir, visual_img_one_4th):
 	# Use library https://github.com/Cartucho/mAP
 	# Get image paths.
 	df_gt = pd.read_csv(gt_csv_path)
@@ -153,15 +150,15 @@ def draw_gt_n_det(gt_csv_path, det_csv_path, drawn_img_dir):
 	colormap = get_colormap(data_types)
 
 	img_paths = sorted(set(df_det['image_path'].values.tolist()))
-	for i in trange(len(img_paths), desc=''):
+	for i in trange(len(img_paths), desc='Drawing gt and dets'):
 		img_path = img_paths[i]
 		cond_gt = df_gt['image_path']==img_path
 		cond_det = df_det['image_path']==img_path
 		gt_annos = df_gt.loc[cond_gt, :].to_dict('record')
 		det_annos = df_det.loc[cond_det, :].to_dict('record')
 		annos = gt_annos + det_annos
-		drawn_img_path = drawn_img_dir + img_path.split('/')[-1]
-		draw_gt_n_det_core(img_path, annos, colormap, drawn_img_path=drawn_img_path, half_img=False)
+		visual_img_path = visual_img_dir + img_path.split('/')[-1]
+		draw_gt_n_det_core(img_path, annos, colormap, visual_img_path=visual_img_path, one_4th_img=visual_img_one_4th)
 		
 
 def get_colormap(label_names, colormap_name='gist_rainbow'):
@@ -174,7 +171,7 @@ def get_colormap(label_names, colormap_name='gist_rainbow'):
 	return colormap
 
 
-def draw_gt_n_det_core(img_path, annos, colormap, drawn_img_path=None, half_img=False):
+def draw_gt_n_det_core(img_path, annos, colormap, visual_img_path=None, one_4th_img=False):
 	# Draw annotion data on image.
 	img = cv2.imread(img_path)
 	for a in annos:
@@ -186,13 +183,13 @@ def draw_gt_n_det_core(img_path, annos, colormap, drawn_img_path=None, half_img=
 		cv2.putText(img, text, (a['xmin'], a['ymin']-5), cv2.FONT_HERSHEY_SIMPLEX, 0.7, color, 2, cv2.LINE_AA)
 
 	# Save or show an image.
-	if drawn_img_path != None:
+	if visual_img_path != None:
 		# Resize the image.
-		if half_img == True:
+		if one_4th_img == True:
 			h,w,c = img.shape
 			img = cv2.resize(img, (int(w*0.5), int(h*0.5)))
 		# Save the image.
-		cv2.imwrite(drawn_img_path, img)
+		cv2.imwrite(visual_img_path, img)
 	else:
 		cv2.imshow('image', img)
 		cv2.waitKey(0)
@@ -211,24 +208,24 @@ def parse_args():
 	arg_parser = argparse.ArgumentParser(description="Image Classification")
 	
 	# Dataset
-	arg_parser.add_argument("--dataset_name", default='PennFudanPed')
+	#arg_parser.add_argument("--dataset_name", default='PennFudanPed')
 	arg_parser.add_argument("--data_dir", default='D:/workspace/datasets/PennFudanPed/')
 	arg_parser.add_argument('--data_anno_path', default='../data/annos/anno_penn-fudan-ped.csv')
 	arg_parser.add_argument('--anno_text_dir', default='./mAP/input/ground-truth/')
 
 	# Model
-	arg_parser.add_argument("--model_name", default='FasterRCNN-ResNet50')
-	arg_parser.add_argument("--model_weight_path", default='../experiments/models/PennFudanPed_FasterRCNN-ResNet50_epoch=10.pth')
+	#arg_parser.add_argument("--model_name", default='FasterRCNN-ResNet50')
+	arg_parser.add_argument('--n_classes', default=2, type=int)
+	arg_parser.add_argument('--model_weight_path', default='../experiments/models/PennFudanPed_FasterRCNN-ResNet50_epoch=10.pth')
 	
 	# Results
-	arg_parser.add_argument('--det_result_dir', default='../experiments/results/detections/')
-	arg_parser.add_argument('--det_result_path', default='../experiments/results/detections/dets.csv')
+	arg_parser.add_argument('--det_result_dir', default='../experiments/results/tables/')
+	arg_parser.add_argument('--det_result_path', default='../experiments/results/tables/dets.csv')
+	arg_parser.add_argument('--det_score_path', default='../experiments/results/tables/score.csv')
+	arg_parser.add_argument('--visual_img_dir', default='../experiments/results/images/')
+	arg_parser.add_argument('--visual_img_one_4th', default=1, type=int, help='Resize images half. 0 is False, 1 is True.')
 	arg_parser.add_argument('--det_text_dir', default='./mAP/input/detection-results/')
-	arg_parser.add_argument('--score_dir', default='../experiments/results/score/')
-	arg_parser.add_argument('--score_path', default='../experiments/results/score/score.csv')
-	arg_parser.add_argument('--drawn_img_dir', default='../experiments/results/drawn_images/')
-	arg_parser.add_argument('--visual_img_half', default=1, type=int, help='Resize images half. 0 is False, 1 is True.')
-
+	
 	# Others 
 	arg_parser.add_argument('--score_thresh', default=0.75, type=float)
 	
@@ -236,19 +233,19 @@ def parse_args():
 
 	# Make directories.
 	os.makedirs(args.det_result_dir, exist_ok=True)
-	os.makedirs(args.drawn_img_dir, exist_ok=True)
-	os.makedirs(args.score_dir, exist_ok=True)
+	os.makedirs(args.visual_img_dir, exist_ok=True)
 	remake_dir(args.anno_text_dir)
 	remake_dir(args.det_text_dir)
 	
 	# Validate paths.
 	assert os.path.exists(args.data_dir)
 	assert os.path.exists(args.data_anno_path)
+	assert os.path.exists(args.anno_text_dir)
 	assert os.path.exists(args.model_weight_path)
 	assert os.path.exists(args.det_result_dir)
-	assert os.path.exists(args.score_dir)
-	assert os.path.exists(args.drawn_img_dir)
-
+	assert os.path.exists(args.visual_img_dir)
+	assert os.path.exists(args.det_text_dir)
+	
 	return args
 
 
