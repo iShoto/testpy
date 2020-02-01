@@ -1,6 +1,3 @@
-
-# PyTorchの物体検出チュートリアルを魔改造
-
 [PyTorchの物体検出チュートリアル](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html)が、
 個人的にいじりたい場所が沢山あったので、色々と魔改造してみた。
 コードは[こちら](https://github.com/iShoto/testpy/tree/master/codes/20200125_pytorch_object_detection)。
@@ -20,7 +17,7 @@ TrainingとTestで各々3つずつ魔改造ポイントがある。
 CSV化することでPandasのDataFrameにできるので、色々な実験をしたい時に便利。
 
 - 1.2. モデルをFaster RCNNに変更  
-ホントは様々なモデルが扱えるmmdetectionが良かったが、自分にはちょっとハードルが高かった。
+ホントは様々なモデルが扱えるMMDetectionが良かったが、自分にはちょっとハードルが高かった。
 魔改造第2弾があれば使ってみたい。今回はTorchVision。
 チュートリアルではMask RCNNを使っていたが、特にマスクは不要なのでFaster RCNNに変更した。
 ただし、これはチュートリアルにも載っている。
@@ -210,15 +207,16 @@ Precisionの低下を導いていることが分かる。
 
 |||
 |:--:|:--:|
-|![pic](./images/FudanPed00029.png)|![pic](./images/FudanPed00043.png)|
-|![pic](./images/FudanPed00048.png)|![pic](./images/FudanPed00062.png)|
+|[f:id:Shoto:20200202002026p:plain]|[f:id:Shoto:20200202002031p:plain]|
+|[f:id:Shoto:20200202002034p:plain]|[f:id:Shoto:20200202002038p:plain]|
 
 
 ## まとめ
 
 [チュートリアル](https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html)だと、
 テストがほとんどなかったが、説明したコードを利用すれば基礎な分析はできるようになった。
-あとは、訓練時にTorchVisionに依存しているので、mmdetectionなどモデルが多数使えるようにしたり、
+あとは、訓練時にTorchVisionに依存しているので、
+[MMDetection](https://github.com/open-mmlab/mmdetection)を利用して多数のモデルが使えるようにしたり、
 [Albumentations](https://github.com/albumentations-team/albumentations)を用いたData Augmentationや、
 Schedulerの充実などを行いたい。
 

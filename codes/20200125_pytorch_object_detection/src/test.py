@@ -29,6 +29,7 @@ def main():
 	model.load_state_dict(torch.load(args.model_weight_path))
 	model = model.to(device)
 
+	# Test some.
 	detect_objects(args.data_anno_path, test_data_loader, model, device, args.det_result_path)
 	calc_score(args.data_anno_path, args.anno_text_dir, args.det_result_path, args.det_text_dir, args.det_score_path)
 	draw_gt_n_det(args.data_anno_path, args.det_result_path, args.visual_img_dir, args.visual_img_one_4th)
@@ -86,7 +87,7 @@ def detect_objects(data_anno_path, test_data_loader, model, device, det_result_p
 	print('Detection results saved to {}'.format(det_result_path))
 
 
-def calc_score(gt_csv_path, gt_text_dir, det_csv_path, det_text_dir, score_path):
+def calc_score(gt_csv_path, gt_text_dir, det_csv_path, det_text_dir, det_score_path):
 	# Use https://github.com/Cartucho/mAP
 	# Memorize current path because it changes in mAP calculation processing.
 	current_path = os.getcwd()
@@ -104,7 +105,8 @@ def calc_score(gt_csv_path, gt_text_dir, det_csv_path, det_text_dir, score_path)
 	# Save scores.
 	os.chdir(current_path)
 	assert os.getcwd() == current_path
-	df.to_csv(score_path, index=False)
+	df.to_csv(det_score_path, index=False)
+	print('Score saved to {}'.format(det_score_path))
 
 
 def __make_text_files(csv_path, text_dir, file_type):
@@ -223,7 +225,7 @@ def parse_args():
 	arg_parser.add_argument('--det_result_path', default='../experiments/results/tables/dets.csv')
 	arg_parser.add_argument('--det_score_path', default='../experiments/results/tables/score.csv')
 	arg_parser.add_argument('--visual_img_dir', default='../experiments/results/images/')
-	arg_parser.add_argument('--visual_img_one_4th', default=1, type=int, help='Resize images half. 0 is False, 1 is True.')
+	arg_parser.add_argument('--visual_img_one_4th', default=0, type=int, help='Resize images half. 0 is False, 1 is True.')
 	arg_parser.add_argument('--det_text_dir', default='./mAP/input/detection-results/')
 	
 	# Others 
