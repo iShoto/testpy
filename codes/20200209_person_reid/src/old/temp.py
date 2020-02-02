@@ -23,19 +23,6 @@ import test
 def main():
 	device = torch.device("cuda")
 
-	train_dataset = dataset.Dataset(opt.train_root,  # '/data/Datasets/webface/CASIA-maxpy-clean-crop-144/'
-									opt.train_list,  # '/data/Datasets/webface/train_data_13938.txt'
-									phase='train', 
-									input_shape=opt.input_shape  # (1, 128, 128)
-	)
-	trainloader = data.DataLoader(train_dataset,
-								  batch_size=opt.train_batch_size,  # 16
-								  shuffle=True,
-								  num_workers=opt.num_workers  # 4
-	)
-
-	1/0
-
 	model = resnet.resnet18()
 	print(model)
 
