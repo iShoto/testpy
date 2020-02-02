@@ -10,8 +10,10 @@ import torchvision.transforms as transforms
 import os
 import argparse
 from sklearn.metrics import classification_report
+import pandas as pd
 
-from datasets import cifar10
+#from datasets import cifar10
+from datasets import market1501
 import metrics
 from models.resnet import ResNet18
 
@@ -24,7 +26,11 @@ def main():
 	device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 	# Load dataset.
-	train_loader, test_loader, class_names = cifar10.load_data(args.data_dir)
+	#train_loader, test_loader, class_names = cifar10.load_data(args.data_dir)
+	if os.path.exists(args.anno_path) == False:
+		market1501.make_csv(args.data_dir, args.anno_path)
+	train_loader, test_loader, class_names = market1501.load_data(args.anno_path)
+	#print(len(class_names))  # 751
 	
 	# Set a model.
 	model = get_model(args.model_name, args.n_feats)
@@ -163,10 +169,15 @@ def parse_args():
 	# Set arguments.
 	arg_parser = argparse.ArgumentParser(description="Image Classification")
 	
-	arg_parser.add_argument("--dataset_name", type=str, default='CIFAR10')
-	arg_parser.add_argument("--data_dir", type=str, default='D:/workspace/datasets/')
+	#arg_parser.add_argument("--dataset_name", type=str, default='CIFAR10')
+	#arg_parser.add_argument("--data_dir", type=str, default='D:/workspace/datasets/')
 	#arg_parser.add_argument("--data_dir", type=str, default='../data/')
-	#arg_parser.add_argument("--model_name", type=str, default='ResNet18')
+
+	arg_parser.add_argument('--dataset_name', default='Market1501')
+	arg_parser.add_argument('--data_dir', default='D:/workspace/datasets/Market-1501-v15.09.15/')
+	arg_parser.add_argument('--anno_dir', default='../data/annos/')
+	arg_parser.add_argument('--anno_path', default='../data/annos/anno.csv')
+
 	arg_parser.add_argument("--model_name", type=str, default='ResNet18')
 	arg_parser.add_argument("--model_ckpt_dir", type=str, default='../experiments/models/checkpoints/')
 	arg_parser.add_argument("--model_ckpt_path_temp", type=str, default='../experiments/models/checkpoints/{}_{}_epoch={}.pth')
@@ -181,12 +192,12 @@ def parse_args():
 	args = arg_parser.parse_args()
 
 	# Make directory.
-	os.makedirs(args.data_dir, exist_ok=True)
-	os.makedirs(args.model_ckpt_dir, exist_ok=True)
+	os.makedirs(args.anno_dir, exist_ok=True)
+	#os.makedirs(args.model_ckpt_dir, exist_ok=True)
 
 	# Validate paths.
 	assert os.path.exists(args.data_dir)
-	assert os.path.exists(args.model_ckpt_dir)
+	assert os.path.exists(args.anno_dir)
 
 	return args
 
