@@ -53,3 +53,12 @@ tensor([[[[0.2000, 0.2078, 0.1804,  ..., 0.2588, 0.2588, 0.2667],
 torch.Size([1, 3, 128, 64])
 tensor([1101])
 ```
+
+block: [0,0,0], thread: [1,0,0] Assertion `indexValue >= 0 && indexValue < tensor.sizes[dim]` failed.
+- [Device-side Assert in `THCReduceAll.cuh:339` #5561 - GitHub](https://github.com/pytorch/pytorch/issues/5561)
+
+
+- Market1501
+tensor([1393,  645])
+
+- CIFAR

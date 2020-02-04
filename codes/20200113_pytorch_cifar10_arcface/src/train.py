@@ -65,6 +65,9 @@ def train(device, train_loader, model, metric_fc, criterion, optimizer):
 	target_list = []
 	running_loss = 0.0
 	for batch_idx, (inputs, targets) in enumerate(train_loader):
+		print(targets)
+
+		1/0
 		# Forward processing.
 		inputs, targets = inputs.to(device), targets.to(device).long()
 		features = model(inputs)

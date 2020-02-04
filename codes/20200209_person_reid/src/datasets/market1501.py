@@ -29,6 +29,7 @@ class Market1501(object):
 		img_path = df.loc[idx, 'image_path']
 		assert os.path.exists(img_path)
 		img = Image.open(img_path).convert('RGB')
+		img = img.resize([img.size[0], img.size[0]], Image.NEAREST)
 
 		# Target
 		person_id = df.loc[idx, 'person_id']
@@ -46,17 +47,19 @@ class Market1501(object):
 def load_data(anno_path):
 	transform_train = transforms.Compose([
 		transforms.RandomHorizontalFlip(),
-		transforms.ToTensor()
+		transforms.ToTensor(),
+		transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
 	])
 
 	transform_test = transforms.Compose([
-		transforms.ToTensor()
+		transforms.ToTensor(),
+		transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
 	])
 
 	train_set = Market1501(anno_path, 'train', transforms=transform_train)
-	train_loader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle=True, num_workers=0)
+	train_loader = torch.utils.data.DataLoader(train_set, batch_size=2, shuffle=True, num_workers=0)
 	test_set = Market1501(anno_path, 'test', transforms=transform_train)
-	test_loader = torch.utils.data.DataLoader(test_set, batch_size=32, shuffle=False, num_workers=0)
+	test_loader = torch.utils.data.DataLoader(test_set, batch_size=2, shuffle=False, num_workers=0)
 	df = pd.read_csv(anno_path)
 	class_names = sorted(list(set(df.loc[df['mode']=='train', 'person_id'].values)))
 		
