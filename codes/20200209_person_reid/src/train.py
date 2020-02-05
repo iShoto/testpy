@@ -27,17 +27,15 @@ def main():
 
 	# Load dataset.
 	#train_loader, test_loader, class_names = cifar10.load_data(args.data_dir)
-	#if os.path.exists(args.anno_path) == False:
-	market1501.make_csv(args.data_dir, args.anno_path)
-
-	1/0
+	if os.path.exists(args.anno_path) == False:
+		market1501.make_csv(args.data_dir, args.anno_path)
 	train_loader, test_loader, class_names = market1501.load_data(args.anno_path)
-	#print(len(class_names))  # 751
+	print(len(class_names))  # 751
 	
 	# Set a model.
 	model = get_model(args.model_name, args.n_feats)
 	model = model.to(device)
-	#print(model)
+	print(model)
 
 	# Set a metric
 	metric = metrics.ArcMarginProduct(args.n_feats, len(class_names), s=args.norm, m=args.margin, easy_margin=args.easy_margin)
@@ -74,18 +72,10 @@ def train(device, train_loader, model, metric_fc, criterion, optimizer):
 	running_loss = 0.0
 	for batch_idx, (inputs, targets) in enumerate(train_loader):
 		# Forward processing.
-		print(inputs)
-		print(targets)
-		targets = torch.eye(751)[targets]
-		print(targets)
-		1/0
 		inputs, targets = inputs.to(device), targets.to(device).long()
 		features = model(inputs)
-		print(features)
 		outputs = metric_fc(features, targets)
-		print(outputs)
 		loss = criterion(outputs, targets)
-		print(loss)
 		
 		# Backward processing.
 		optimizer.zero_grad()

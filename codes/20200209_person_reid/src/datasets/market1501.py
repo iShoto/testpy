@@ -32,13 +32,14 @@ class Market1501(object):
 		img = img.resize([img.size[0], img.size[0]], Image.NEAREST)
 
 		# Target
-		person_id = df.loc[idx, 'person_id']
+		#person_id = df.loc[idx, 'person_id']
+		person_index = df.loc[idx, 'person_index']
 
 		# Transform
 		if self.transforms is not None:
 			img = self.transforms(img)
 
-		return img, person_id
+		return img, person_index
 
 	def __len__(self):
 		return len(set(self.df['image_path'].values.tolist()))
@@ -47,21 +48,22 @@ class Market1501(object):
 def load_data(anno_path):
 	transform_train = transforms.Compose([
 		transforms.RandomHorizontalFlip(),
-		transforms.ToTensor(),
-		transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+		transforms.ToTensor()#,
+		#transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
 	])
 
 	transform_test = transforms.Compose([
-		transforms.ToTensor(),
-		transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
+		transforms.ToTensor()#,
+		#transforms.Normalize((0.4914, 0.4822, 0.4465), (0.2023, 0.1994, 0.2010))
 	])
 
 	train_set = Market1501(anno_path, 'train', transforms=transform_train)
-	train_loader = torch.utils.data.DataLoader(train_set, batch_size=2, shuffle=True, num_workers=0)
+	train_loader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle=True, num_workers=0)
 	test_set = Market1501(anno_path, 'test', transforms=transform_train)
-	test_loader = torch.utils.data.DataLoader(test_set, batch_size=2, shuffle=False, num_workers=0)
+	test_loader = torch.utils.data.DataLoader(test_set, batch_size=32, shuffle=False, num_workers=0)
 	df = pd.read_csv(anno_path)
-	class_names = sorted(list(set(df.loc[df['mode']=='train', 'person_id'].values)))
+	#class_names = sorted(list(set(df.loc[df['mode']=='train', 'person_id'].values)))
+	class_names = sorted(list(set(df.loc[df['mode']=='train', 'person_index'].values)))
 		
 	return train_loader, test_loader, class_names
 
@@ -81,15 +83,13 @@ def make_csv(data_dir, anno_path):
 	train_list = __org_img_data(train_dir, train_img_names, 'train')
 	test_list = __org_img_data(test_dir, test_img_names, 'test')
 
-	# Make DataFrame.	
-	cols = ['person_id', 'camera_id', 'sequence_id', 'frame_no', 'dpm_bbox_no', 'mode', 'image_name', 'image_path']
-	df = pd.DataFrame(train_list+test_list)[cols]
-	df.to_csv(anno_path, index=False)
+	# Make and save DataFrame.
+	__make_and_save_dataframe(train_list, test_list, anno_path)
 
 
 def __org_img_data(data_dir, img_names, mode):
 	lis = []
-	for i in trange(len(img_names), desc='Organizing {} data'):
+	for i in trange(len(img_names), desc='Organizing {} data'.format(mode)):
 		dic = {}
 		dic['image_name'] = img_names[i]
 		dic['image_path'] = data_dir + img_names[i]
@@ -103,6 +103,37 @@ def __org_img_data(data_dir, img_names, mode):
 		lis.append(dic)
 
 	return lis
+
+
+def __make_and_save_dataframe(train_list, test_list, anno_path):
+	# Make DataFrame.
+	df = pd.DataFrame(train_list+test_list)
+
+	# Get person IDs.
+	train_person_ids = sorted(set(df.loc[df['mode']=='train', 'person_id'].values))
+	test_person_ids = sorted(set(df.loc[df['mode']=='test', 'person_id'].values))
+	test_person_ids.remove('-1')
+	test_person_ids.remove('0000')
+
+	# Make person ID and index dictonary.
+	person_dic = {}
+	train_person_dic = {train_person_ids[i]: i for i in range(len(train_person_ids))}
+	test_person_dic = {test_person_ids[i]: i+len(train_person_ids) for i in range(len(test_person_ids))}
+	test_person_dic_neg = {'-1': 1501, '0000': 1502}
+	person_dic.update(train_person_dic)
+	person_dic.update(test_person_dic)
+	person_dic.update(test_person_dic_neg)
+	
+	# Set person indexes.
+	df['person_index'] = -999
+	for p_id, p_idx in person_dic.items():
+		cond = df['person_id']==p_id
+		df.loc[cond, 'person_index'] = p_idx
+
+	# Save annotation data as a csv file.
+	cols = ['person_index', 'person_id', 'camera_id', 'sequence_id', 'frame_no', 'dpm_bbox_no', 'mode', 'image_name', 'image_path']
+	df = df[cols]
+	df.to_csv(anno_path, index=False)
 
 
 def parse_args():
