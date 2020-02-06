@@ -72,9 +72,13 @@ def train(device, train_loader, model, metric_fc, criterion, optimizer):
 	running_loss = 0.0
 	for batch_idx, (inputs, targets) in enumerate(train_loader):
 		# Forward processing.
+		#print(inputs[0])
+		#print(targets)
 		inputs, targets = inputs.to(device), targets.to(device).long()
 		features = model(inputs)
+		#print(features[0])
 		outputs = metric_fc(features, targets)
+		#print(outputs)
 		loss = criterion(outputs, targets)
 		
 		# Backward processing.
@@ -127,6 +131,14 @@ def get_model(model_name, num_classes=512):
 		model = VGG('VGG19')
 	elif model_name == 'ResNet18':
 		model = ResNet18(num_classes)
+	elif model_name == 'ResNet34':
+		model = ResNet34(num_classes)
+	elif model_name == 'ResNet50':
+		model = ResNet50(num_classes)
+	elif model_name == 'ResNet101':
+		model = ResNet101(num_classes)
+	elif model_name == 'ResNet152':
+		model = ResNet152(num_classes)
 	elif model_name == 'PreActResNet18':
 		model = PreActResNet18()
 	elif model_name == 'GoogLeNet':
