@@ -33,8 +33,10 @@ def main():
 	print(len(class_names))  # 751
 	
 	# Set a model.
+	# cf. https://github.com/rwightman/pytorch-image-models
 	model = get_model(args.model_name, args.n_feats)
 	model = model.to(device)
+	model.load_state_dict(torch.load('../experiments/pretrained_models/resnet50_ram-a26f946b.pth'))
 	print(model)
 
 	# Set a metric
