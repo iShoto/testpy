@@ -45,7 +45,7 @@ class Market1501(object):
 		return len(set(self.df['image_path'].values.tolist()))
 
 
-def load_data(anno_path):
+def load_data(anno_path, n_batch=32):
 	transform_train = transforms.Compose([
 		transforms.RandomHorizontalFlip(),
 		transforms.ToTensor(),
@@ -58,9 +58,9 @@ def load_data(anno_path):
 	])
 
 	train_set = Market1501(anno_path, 'train', transforms=transform_train)
-	train_loader = torch.utils.data.DataLoader(train_set, batch_size=32, shuffle=True, num_workers=0)
+	train_loader = torch.utils.data.DataLoader(train_set, batch_size=n_batch, shuffle=True, num_workers=0)
 	test_set = Market1501(anno_path, 'test', transforms=transform_train)
-	test_loader = torch.utils.data.DataLoader(test_set, batch_size=32, shuffle=False, num_workers=0)
+	test_loader = torch.utils.data.DataLoader(test_set, batch_size=n_batch, shuffle=False, num_workers=0)
 	df = pd.read_csv(anno_path)
 	#class_names = sorted(list(set(df.loc[df['mode']=='train', 'person_id'].values)))
 	class_names = sorted(list(set(df.loc[df['mode']=='train', 'person_index'].values)))

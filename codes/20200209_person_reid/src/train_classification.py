@@ -12,8 +12,10 @@ import argparse
 from sklearn.metrics import classification_report
 import pandas as pd
 
+#from datasets import cifar10
 from datasets import market1501
 import metrics
+from models.resnet import ResNet18
 import torchvision.models as models
 
 
@@ -28,29 +30,34 @@ def main():
 	#train_loader, test_loader, class_names = cifar10.load_data(args.data_dir)
 	if os.path.exists(args.anno_path) == False:
 		market1501.make_csv(args.data_dir, args.anno_path)
-	train_loader, test_loader, class_names = market1501.load_data(args.anno_path, args.n_batch)
-		
+	train_loader, test_loader, class_names = market1501.load_data(args.anno_path)
+	print(len(class_names))  # 751
+	
 	# Set a model.
 	# cf. https://qiita.com/perrying/items/857df46bb6cdc3047bd8
 	model = models.resnet50(pretrained=True)
-	model.fc = nn.Linear(2048, args.n_feats)
+	model.fc = nn.Linear(2048, len(class_names))
 	model = model.to(device)
 	print(model)
 	
+	# cf. https://github.com/rwightman/pytorch-image-models
+	# model = get_model(args.model_name, args.n_feats)
+	#model = model.to(device)
+	#model.load_state_dict(torch.load('../experiments/pretrained_models/resnet50_ram-a26f946b.pth'))
+	#print(model)
+
 	# Set a metric
-	metric = metrics.ArcMarginProduct(args.n_feats, len(class_names), s=args.norm, m=args.margin, easy_margin=args.easy_margin)
-	metric.to(device)
+	#metric = metrics.ArcMarginProduct(args.n_feats, len(class_names), s=args.norm, m=args.margin, easy_margin=args.easy_margin)
+	#metric.to(device)
 
 	# Set loss function and optimization function.
 	criterion = nn.CrossEntropyLoss()
-	optimizer = optim.SGD([{'params': model.parameters()}, {'params': metric.parameters()}],
-						  lr=args.lr, 
-						  weight_decay=args.weight_decay)
+	optimizer = optim.SGD(model.parameters(), lr=args.lr, momentum=0.9, weight_decay=5e-4)
 
 	# Train and test.
 	for epoch in range(args.n_epoch):
 		# Train and test a model.
-		train_acc, train_loss = train(device, train_loader, args.n_batch, model, metric, criterion, optimizer)
+		train_acc, train_loss = train(device, train_loader, model, criterion, optimizer)
 		#test_acc, test_loss = test(device, test_loader, model, metric, criterion)
 		
 		# Output score.
@@ -58,7 +65,7 @@ def main():
 		#print(stdout_temp.format(epoch+1, train_acc, train_loss, test_acc, test_loss))
 		stdout_temp = 'epoch: {:>3}, train acc: {:<8}, train loss: {:<8}'
 		print(stdout_temp.format(epoch+1, train_acc, train_loss))
-
+		
 		# Save a model checkpoint.
 		#model_ckpt_path = args.model_ckpt_path_temp.format(args.dataset_name, args.model_name, epoch+1)
 		#torch.save(model.state_dict(), model_ckpt_path)
@@ -66,7 +73,7 @@ def main():
 		#print('')
 
 
-def train(device, train_loader, n_batch, model, metric_fc, criterion, optimizer):
+def train(device, train_loader, model, criterion, optimizer):
 	model.train()
 
 	output_list = []
@@ -74,9 +81,10 @@ def train(device, train_loader, n_batch, model, metric_fc, criterion, optimizer)
 	running_loss = 0.0
 	for batch_idx, (inputs, targets) in enumerate(train_loader):
 		# Forward processing.
-		inputs, targets = inputs.to(device), targets.to(device).long()
-		features = model(inputs)
-		outputs = metric_fc(features, targets)
+		#print(inputs[0])
+		#print(targets)
+		inputs, targets = inputs.to(device), targets.to(device)
+		outputs = model(inputs)
 		loss = criterion(outputs, targets)
 		
 		# Backward processing.
@@ -88,15 +96,15 @@ def train(device, train_loader, n_batch, model, metric_fc, criterion, optimizer)
 		output_list += [int(o.argmax()) for o in outputs]
 		target_list += [int(t) for t in targets]
 		running_loss += loss.item()
-		
+
 		# Calculate score at present.
-		train_acc, train_loss = calc_score(output_list, target_list, running_loss, n_batch, batch_idx, train_loader)
+		train_acc, train_loss = calc_score(output_list, target_list, running_loss, train_loader)
 		if (batch_idx % 10 == 0 and batch_idx != 0) or (batch_idx == len(train_loader)):
 			stdout_temp = 'batch: {:>3}/{:<3}, train acc: {:<8}, train loss: {:<8}'
 			print(stdout_temp.format(batch_idx, len(train_loader), train_acc, train_loss))
 			
 	# Calculate score.
-	#train_acc, train_loss = calc_score(output_list, target_list, running_loss, train_loader)
+	train_acc, train_loss = calc_score(output_list, target_list, running_loss, train_loader)
 
 	return train_acc, train_loss
 
@@ -124,15 +132,11 @@ def test(device, test_loader, model, metric_fc, criterion):
 	return test_acc, test_loss
 
 
-def calc_score(output_list, target_list, running_loss, n_batch, batch_idx, data_loader):
+def calc_score(output_list, target_list, running_loss, data_loader):
 	# Calculate accuracy.
 	result = classification_report(output_list, target_list, output_dict=True)
 	acc = round(result['weighted avg']['f1-score'], 6)
-	#loss = round(running_loss / len(data_loader.dataset), 6)
-	if n_batch * batch_idx < len(data_loader.dataset):
-		loss = running_loss / (n_batch * (batch_idx+1))
-	else:
-		loss = running_loss / len(data_loader.dataset)
+	loss = round(running_loss / len(data_loader.dataset), 6)
 	
 	return acc, loss
 
@@ -149,12 +153,11 @@ def parse_args():
 	arg_parser.add_argument('--data_dir', default='D:/workspace/datasets/Market-1501-v15.09.15/')
 	arg_parser.add_argument('--anno_dir', default='../data/annos/')
 	arg_parser.add_argument('--anno_path', default='../data/annos/anno.csv')
-	arg_parser.add_argument('--n_batch', default=32, type=int)
 
 	arg_parser.add_argument("--model_name", type=str, default='ResNet18')
 	arg_parser.add_argument("--model_ckpt_dir", type=str, default='../experiments/models/checkpoints/')
 	arg_parser.add_argument("--model_ckpt_path_temp", type=str, default='../experiments/models/checkpoints/{}_{}_epoch={}.pth')
-	arg_parser.add_argument('--n_epoch', default=2, type=int, help='The number of epoch')
+	arg_parser.add_argument('--n_epoch', default=100, type=int, help='The number of epoch')
 	arg_parser.add_argument('--lr', default=0.001, type=float, help='Learning rate')
 	arg_parser.add_argument('--n_feats', default=512, type=int, help='The number of base model output')
 	arg_parser.add_argument('--easy_margin', default=1, type=int, help='0 is False, 1 is True')
