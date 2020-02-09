@@ -11,6 +11,7 @@ import os
 import argparse
 from sklearn.metrics import classification_report
 import pandas as pd
+import optuna
 
 from datasets import market1501
 import metrics
