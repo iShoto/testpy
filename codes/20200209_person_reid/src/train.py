@@ -26,10 +26,9 @@ def main():
 	device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
 	# Load dataset.
-	#train_loader, test_loader, class_names = cifar10.load_data(args.data_dir)
 	if os.path.exists(args.anno_path) == False:
 		market1501.make_csv(args.data_dir, args.anno_path)
-	train_loader, test_loader, class_names = market1501.load_data(args.anno_path, args.n_batch)
+	train_loader, gallery_loader, query_loader, class_names = market1501.load_data(args.anno_path, args.n_batch)
 		
 	# Set a model.
 	# cf. https://qiita.com/perrying/items/857df46bb6cdc3047bd8
@@ -47,11 +46,12 @@ def main():
 	optimizer = optim.SGD([{'params': model.parameters()}, {'params': metric.parameters()}],
 						  lr=args.lr, 
 						  weight_decay=args.weight_decay)
+	#scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=args.gamma)
 
 	# Train and test.
 	for epoch in range(args.n_epoch):
 		# Train and test a model.
-		train_acc, train_loss = train(device, train_loader, args.n_batch, model, metric, criterion, optimizer)
+		train_acc, train_loss = train(device, train_loader, args.n_batch, model, metric, criterion, optimizer)#, scheduler)
 		#test_acc, test_loss = test(device, test_loader, model, metric, criterion)
 		
 		# Output score.
@@ -61,13 +61,16 @@ def main():
 		print(stdout_temp.format(epoch+1, train_acc, train_loss))
 
 		# Save a model checkpoint.
-		#model_ckpt_path = args.model_ckpt_path_temp.format(args.dataset_name, args.model_name, epoch+1)
-		#torch.save(model.state_dict(), model_ckpt_path)
-		#print('Saved a model checkpoint at {}'.format(model_ckpt_path))
-		#print('')
+		model_ckpt_path = args.model_ckpt_path_temp.format(args.dataset_name, args.model_name, epoch+1)
+		metric_ckpt_path = args.metric_ckpt_path_temp.format(args.dataset_name, args.model_name, epoch+1)
+		torch.save(model.state_dict(), model_ckpt_path)
+		torch.save(metric.state_dict(), metric_ckpt_path)
+		print('Saved a model checkpoint at {}'.format(model_ckpt_path))
+		print('Saved a metric checkpoint at {}'.format(metric_ckpt_path))
+		print('')
 
 
-def train(device, train_loader, n_batch, model, metric_fc, criterion, optimizer):
+def train(device, train_loader, n_batch, model, metric_fc, criterion, optimizer):#, scheduler):
 	model.train()
 
 	output_list = []
@@ -84,6 +87,7 @@ def train(device, train_loader, n_batch, model, metric_fc, criterion, optimizer)
 		optimizer.zero_grad()
 		loss.backward()
 		optimizer.step()
+		#scheduler.step() 
 		
 		# Set data to calculate score.
 		output_list += [int(o.argmax()) for o in outputs]
@@ -92,7 +96,7 @@ def train(device, train_loader, n_batch, model, metric_fc, criterion, optimizer)
 		
 		# Calculate score at present.
 		train_acc, train_loss = calc_score(output_list, target_list, running_loss, n_batch, batch_idx, train_loader)
-		if (batch_idx % 10 == 0 and batch_idx != 0) or (batch_idx == len(train_loader)):
+		if (batch_idx % 100 == 0 and batch_idx != 0) or (batch_idx == len(train_loader)):
 			stdout_temp = 'batch: {:>3}/{:<3}, train acc: {:<8}, train loss: {:<8}'
 			print(stdout_temp.format(batch_idx, len(train_loader), train_acc, train_loss))
 			
@@ -142,36 +146,40 @@ def parse_args():
 	# Set arguments.
 	arg_parser = argparse.ArgumentParser(description="Image Classification")
 	
-	#arg_parser.add_argument("--dataset_name", type=str, default='CIFAR10')
-	#arg_parser.add_argument("--data_dir", type=str, default='D:/workspace/datasets/')
-	#arg_parser.add_argument("--data_dir", type=str, default='../data/')
-
 	arg_parser.add_argument('--dataset_name', default='Market1501')
 	arg_parser.add_argument('--data_dir', default='D:/workspace/datasets/Market-1501-v15.09.15/')
 	arg_parser.add_argument('--anno_dir', default='../data/annos/')
 	arg_parser.add_argument('--anno_path', default='../data/annos/anno.csv')
 	arg_parser.add_argument('--n_batch', default=32, type=int)
 
-	arg_parser.add_argument("--model_name", type=str, default='ResNet18')
-	arg_parser.add_argument("--model_ckpt_dir", type=str, default='../experiments/models/checkpoints/')
-	arg_parser.add_argument("--model_ckpt_path_temp", type=str, default='../experiments/models/checkpoints/{}_{}_epoch={}.pth')
-	arg_parser.add_argument('--n_epoch', default=2, type=int, help='The number of epoch')
-	arg_parser.add_argument('--lr', default=0.001, type=float, help='Learning rate')
-	arg_parser.add_argument('--n_feats', default=512, type=int, help='The number of base model output')
-	arg_parser.add_argument('--easy_margin', default=1, type=int, help='0 is False, 1 is True')
-	arg_parser.add_argument('--weight_decay', default=5e-4, type=float, help='')
-	arg_parser.add_argument('--norm', default=30, type=int, help='ArcFace: norm of input feature')
-	arg_parser.add_argument('--margin', default=0.5, type=float, help='ArcFace: margin')
-		
+	arg_parser.add_argument("--model_name", type=str, default='ResNet50')
+	arg_parser.add_argument("--ckpt_dir", type=str, default='../experiments/models/checkpoints/')
+	arg_parser.add_argument("--model_ckpt_path_temp", type=str, default='../experiments/models/checkpoints/model_{}_{}_epoch={}.pth')
+	arg_parser.add_argument("--metric_ckpt_path_temp", type=str, default='../experiments/models/checkpoints/metric_{}_{}_epoch={}.pth')
+	arg_parser.add_argument('--n_epoch', default=5, type=int, help='The number of epoch')
+	arg_parser.add_argument('--lr', default=0.086, type=float, help='Learning rate')
+	arg_parser.add_argument('--n_feats', default=256, type=int, help='The number of base model output')
+	arg_parser.add_argument('--easy_margin', default=0, type=int, help='0 is False, 1 is True')
+	arg_parser.add_argument('--weight_decay', default=0.0098, type=float, help='')
+	arg_parser.add_argument('--norm', default=5, type=int, help='ArcFace: norm of input feature')
+	arg_parser.add_argument('--margin', default=0.00059, type=float, help='ArcFace: margin')
+	arg_parser.add_argument('--step_size', default=20, type=int, help='Learning Rate: step size')
+	arg_parser.add_argument('--gamma', default=0.5, type=float, help='Learning Rate: gamma')
+
+	"""
+	{'n_feats': 256, 'norm': 5, 'margin': 0.0005883992558471014, 'easy_margin': 0, 'lr': 0.08620634410578862, 'weight_decay': 0.009787166658749052}.
+	"""
+
 	args = arg_parser.parse_args()
 
 	# Make directory.
 	os.makedirs(args.anno_dir, exist_ok=True)
-	#os.makedirs(args.model_ckpt_dir, exist_ok=True)
+	os.makedirs(args.ckpt_dir, exist_ok=True)
 
 	# Validate paths.
 	assert os.path.exists(args.data_dir)
 	assert os.path.exists(args.anno_dir)
+	assert os.path.exists(args.ckpt_dir)
 
 	return args
 
