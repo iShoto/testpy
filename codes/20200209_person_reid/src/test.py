@@ -26,7 +26,7 @@ def main():
 	args = parse_args()
 
 	# Load dataset.
-	train_loader, gallery_loader, query_loader, class_names = market1501.load_data(args.anno_path)
+	query_loader, gallery_loader = market1501.load_test_data(args.anno_test_path)
 
 	# Set device, GPU or CPU.
 	device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -36,35 +36,37 @@ def main():
 	model.fc = nn.Linear(2048, args.n_feats)
 	model.load_state_dict(torch.load(args.model_path))
 	model = model.to(device)
+	model.eval()
 	print(model)
 
 	# Set a metric
-	metric = metrics.ArcMarginProduct(args.n_feats, len(class_names), s=args.norm, m=args.margin, easy_margin=args.easy_margin)
-	metric.load_state_dict(torch.load(args.metric_path))
-	metric.to(device)
-	print(metric)
-
-	1/0
-
+	#metric = metrics.ArcMarginProduct(args.n_feats, len(class_names), s=args.norm, m=args.margin, easy_margin=args.easy_margin)
+	#metric.load_state_dict(torch.load(args.metric_path))
+	#metric.to(device)
+	#print(metric)
 
 	# Query
 	for i, (query_img, query_label, query_path) in enumerate(query_loader):
 		with torch.no_grad():
-			query_img = query_img.to(device)
-			query_feat, pred = model(query_img)
+			print(query_img.shape, query_label)
+			query_img, query_label = query_img.to(device), query_label.to(device)
+			query_feat = model(query_img)
+			break
 
 	# debug
 	print('Query Image Label: {}'.format(query_label.tolist()[0]))
 	print('')
-	
+		
 	# Gallery
 	gallery_feats = []
 	gallery_labels = []
 	gallery_paths = []
 	for i, (g_imgs, g_labels, g_paths) in enumerate(gallery_loader):
+		print('\rSearching query in gallery..., {}/{}'.format(i+1, len(gallery_loader)), end='')
 		with torch.no_grad():
 			g_imgs = g_imgs.to(device)
-			g_feats_temp, preds_temp = model(g_imgs)
+			g_feats_temp = model(g_imgs)
+			#g_feats_temp, preds_temp = model(g_imgs)
 			gallery_feats.append(g_feats_temp)
 			gallery_labels.append(g_labels)
 			gallery_paths += list(g_paths)  # Data type of g_paths is tuple.
@@ -87,6 +89,7 @@ def main():
 	df = df.reset_index(drop=True)
 
 	# debug
+	print('')
 	print('Search Result')
 	print(df.head(20))
 	print('')
@@ -116,7 +119,8 @@ def cosine_similarity(qf, gf):
 def parse_args():
 	arg_parser = argparse.ArgumentParser(description="parser for focus one")
 
-	arg_parser.add_argument('--anno_path', default='../data/annos/anno_market1501.csv')
+	arg_parser.add_argument('--anno_train_path', default='../data/annos/anno_market1501_train.csv')
+	arg_parser.add_argument('--anno_test_path', default='../data/annos/anno_market1501_test.csv')
 	arg_parser.add_argument("--model_path", type=str, default='../experiments/models/model_Market1501_ResNet18_epoch=5.pth')
 	arg_parser.add_argument("--metric_path", type=str, default='../experiments/models/metric_Market1501_ResNet18_epoch=5.pth')
 
@@ -139,9 +143,10 @@ def parse_args():
 	#os.makedirs(args.anno_dir, exist_ok=True)
 
 	# Validate paths.
-	assert os.path.exists(args.anno_path), args.anno_path
-	assert os.path.exists(args.model_path), args.model_path
-	assert os.path.exists(args.metric_path), args.metric_path
+	assert os.path.exists(args.anno_train_path)
+	assert os.path.exists(args.anno_test_path)
+	assert os.path.exists(args.model_path)
+	assert os.path.exists(args.metric_path)
 
 
 	return args

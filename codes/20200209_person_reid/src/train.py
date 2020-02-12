@@ -27,8 +27,8 @@ def main():
 
 	# Load dataset.
 	if os.path.exists(args.anno_path) == False:
-		market1501.make_csv(args.data_dir, args.anno_path)
-	train_loader, gallery_loader, query_loader, class_names = market1501.load_data(args.anno_path, args.n_batch)
+		market1501.make_train_anno(args.data_dir, args.anno_path)
+	train_loader, gallery_loader, query_loader, class_names = market1501.load_train_data(args.anno_path, args.n_batch)
 		
 	# Set a model.
 	# cf. https://qiita.com/perrying/items/857df46bb6cdc3047bd8
@@ -46,12 +46,12 @@ def main():
 	optimizer = optim.SGD([{'params': model.parameters()}, {'params': metric.parameters()}],
 						  lr=args.lr, 
 						  weight_decay=args.weight_decay)
-	#scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=args.gamma)
+	scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=args.step_size, gamma=args.gamma)
 
 	# Train and test.
 	for epoch in range(args.n_epoch):
 		# Train and test a model.
-		train_acc, train_loss = train(device, train_loader, args.n_batch, model, metric, criterion, optimizer)#, scheduler)
+		train_acc, train_loss = train(device, train_loader, args.n_batch, model, metric, criterion, optimizer, scheduler)
 		#test_acc, test_loss = test(device, test_loader, model, metric, criterion)
 		
 		# Output score.
@@ -70,7 +70,7 @@ def main():
 		print('')
 
 
-def train(device, train_loader, n_batch, model, metric_fc, criterion, optimizer):#, scheduler):
+def train(device, train_loader, n_batch, model, metric_fc, criterion, optimizer, scheduler):
 	model.train()
 
 	output_list = []
@@ -87,7 +87,7 @@ def train(device, train_loader, n_batch, model, metric_fc, criterion, optimizer)
 		optimizer.zero_grad()
 		loss.backward()
 		optimizer.step()
-		#scheduler.step() 
+		scheduler.step() 
 		
 		# Set data to calculate score.
 		output_list += [int(o.argmax()) for o in outputs]
@@ -149,7 +149,7 @@ def parse_args():
 	arg_parser.add_argument('--dataset_name', default='Market1501')
 	arg_parser.add_argument('--data_dir', default='D:/workspace/datasets/Market-1501-v15.09.15/')
 	arg_parser.add_argument('--anno_dir', default='../data/annos/')
-	arg_parser.add_argument('--anno_path', default='../data/annos/anno.csv')
+	arg_parser.add_argument('--anno_path', default='../data/annos/anno_market1501_train.csv')
 	arg_parser.add_argument('--n_batch', default=32, type=int)
 
 	arg_parser.add_argument("--model_name", type=str, default='ResNet50')
