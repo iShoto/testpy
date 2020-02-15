@@ -1,5 +1,3 @@
-# Torchreid入門
-
 Person ReIDライブラリーの[Torchreid](https://github.com/KaiyangZhou/deep-person-reid)
 がいい感じだったので簡単まとめておく。
 [チュートリアル](https://kaiyangzhou.github.io/deep-person-reid/)
@@ -54,7 +52,7 @@ train(datamanager, model, optimizer, scheduler)
 `pytorch.optim.lr_scheduler`に実装されているのなら利用できる予感。
 
 
-```bash
+```python
 def get_items():
 	# Step 2: construct data manager
 	datamanager = torchreid.data.ImageDataManager(
@@ -98,7 +96,7 @@ def get_items():
 チェックポイントを`save_dir`に保存してくれる。
 また訓練時は`test_only`を`False`にする。
 
-```bash
+```python
 def train(datamanager, model, optimizer, scheduler):
 	# Step 5: construct engine
 	engine = torchreid.engine.ImageSoftmaxEngine(
@@ -306,12 +304,11 @@ Visualizing top-10 ranks ...
 2列目のように画像の一部がqueryになると著しく正解率が下がる。
 また3列目のようにリュックと服の色の区別ができている訳でもないみたい。
 
-![pic](../docs/images/0001_c1s1_001051_00.jpg)
-![pic](../docs/images/0001_c2s1_000301_00.jpg)
-![pic](../docs/images/0021_c1s1_002301_00.jpg)
-
+[f:id:Shoto:20200215170905j:plain]
+[f:id:Shoto:20200215170909j:plain]
+[f:id:Shoto:20200215170913j:plain]
 
 ## まとめ
 様々なデータやモデルが気軽に非常に便利。
-ただし、色々やれるが痒い所に手は届かないので、
+ただし痒い所に手は届かないので、
 これをベースに改良したい感じ。
