@@ -310,5 +310,7 @@ Visualizing top-10 ranks ...
 
 ## まとめ
 様々なデータやモデルが気軽に非常に便利。
-ただし痒い所に手は届かないので、
-これをベースに改良したい感じ。
+ただし用意されたものだけでは痒い所に手は届かないので、
+[チュートリアル](https://kaiyangzhou.github.io/deep-person-reid/)の
+`Use your own dataset`と`Design your own Engine`
+を参考に改良する必要がある。
