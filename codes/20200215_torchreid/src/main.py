@@ -5,7 +5,7 @@ import torchreid
 def main():
 	# Training
 	datamanager, model, optimizer, scheduler = get_items()
-	#train(datamanager, model, optimizer, scheduler)
+	train(datamanager, model, optimizer, scheduler)
 
 	# Test
 	weight_path = '../experiments/models/model_market1501_resnet50.pth.tar-60'
