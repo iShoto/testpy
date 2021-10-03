@@ -68,12 +68,15 @@ if __name__ == "__main__":
 
 音声は女性の声で多少の癖はあるが聞きやすい方だと思う。
 ただし、話す速度はもっと速くてもいいかな、というレベル。
+音声は[こちら](https://github.com/iShoto/testpy/tree/master/codes/20211004_text_to_speech/src)
+にあるのでダウンロードして聞いてみて下さい。
+
 [gTTSのドキュメント](https://gtts.readthedocs.io/en/latest/module.html)
 を見たけど、`slow`パラメーターはあるが、`fast`というパラメーターはなかった。
 なので、速くしたいなら自分で調整する処理を実装しないといけない。
 
 あと制限については
-[Google Cloud Text-to-Speechの割り当てと上限](https://cloud.google.com/text-to-speech/quotas)
+[Google Cloud Text-to-Speechの「割り当てと上限」](https://cloud.google.com/text-to-speech/quotas)
 に書いてあった。
 ただし、Cloudの仕様なので、gTTSと同じとは限らないが、無料ならまあ十分と言える仕様である。
 １分あたりのリクエスト数は1,000回なので、リクエストを数回叩けば、数万文字を音声にできるので、
@@ -107,5 +110,6 @@ Saved audio_003.mp3
 - [Python テキストを日本語音声で読み上げる「gTTS」](https://hk29.hatenablog.jp/entry/2020/01/27/000230)
 - [ディープラーニング - Wikipedia](https://ja.wikipedia.org/wiki/%E3%83%87%E3%82%A3%E3%83%BC%E3%83%97%E3%83%A9%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0)
 - [割り当てと上限 - Cloud Text-to-Speech](https://cloud.google.com/text-to-speech/quotas)
+- [Goolge Text-to-Speech を試す - iShoto/testpy](https://github.com/iShoto/testpy/tree/master/codes/20211004_text_to_speech)
 
 
