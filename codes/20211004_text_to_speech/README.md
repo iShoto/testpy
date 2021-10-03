@@ -3,7 +3,7 @@
 ※ この記事は、
 [クリエイティブ・コモンズ・表示・継承ライセンス3.0](http://creativecommons.org/licenses/by-sa/3.0/)
 のもとで公表されたウィキペディアの項目
-「[ディープラーニング](https://ja.wikipedia.org/wiki/%E3%83%87%E3%82%A3%E3%83%BC%E3%83%97%E3%83%A9%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0)」
+「[ディープラーニング - Wikipedia](https://ja.wikipedia.org/wiki/%E3%83%87%E3%82%A3%E3%83%BC%E3%83%97%E3%83%A9%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0)」
 を素材として二次利用しています。
 
 シンプルにテキストを音声にしたい、というモチベーションからgTTS（Google Text-to-Speech）を試してみた。
@@ -13,7 +13,7 @@ Web環境を用意して、gTTSをインストールすればOK。
 $ pip install gTTS
 ```
 
-[ディープラーニング](https://ja.wikipedia.org/wiki/%E3%83%87%E3%82%A3%E3%83%BC%E3%83%97%E3%83%A9%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0)
+[ディープラーニング - Wikipedia](https://ja.wikipedia.org/wiki/%E3%83%87%E3%82%A3%E3%83%BC%E3%83%97%E3%83%A9%E3%83%BC%E3%83%8B%E3%83%B3%E3%82%B0)
 のテキストを音声変換するテストコードを書いてみた。
 
 ```python
@@ -68,21 +68,23 @@ if __name__ == "__main__":
 
 音声は女性の声で多少の癖はあるが聞きやすい方だと思う。
 ただし、話す速度はもっと速くてもいいかな、というレベル。
-[ドキュメント](https://gtts.readthedocs.io/en/latest/module.html)
+[gTTSのドキュメント](https://gtts.readthedocs.io/en/latest/module.html)
 を見たけど、`slow`パラメーターはあるが、`fast`というパラメーターはなかった。
 なので、速くしたいなら自分で調整する処理を実装しないといけない。
 
 あと制限については
-[割り当てと上限](https://cloud.google.com/text-to-speech/quotas)
+[Google Cloud Text-to-Speechの割り当てと上限](https://cloud.google.com/text-to-speech/quotas)
 に書いてあった。
 ただし、Cloudの仕様なので、gTTSと同じとは限らないが、無料ならまあ十分と言える仕様である。
 １分あたりのリクエスト数は1,000回なので、リクエストを数回叩けば、数万文字を音声にできるので、
 この辺も自分で音声を繋げる処理を書けばなんとかなりそう。
 
 |音声合成の上限|値|
+|:--|--:|
 |１リクエストあたりの合計文字数|5,000|
 
 |上限のタイプ|使用量上限|
+|:--|--:|
 |1 分あたりのリクエスト数|1,000|
 |1 分あたりの文字数|500,000|
 
